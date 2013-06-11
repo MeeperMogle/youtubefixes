@@ -155,7 +155,7 @@ if (location.href.match(/my_subscriptions/) ){
             }
             
             //add button to unhide all
-            $('#vm-playlist-copy-to').after(' <button id="clear_hidden_list" class="yt-uix-button">Unhide all videos</button>');
+            $('#vm-playlist-copy-to').after(' <button id="clear_hidden_list" class="yt-uix-button">Unhide all manually hidden videos</button>');
         }
         else{
             // --- We are on the front page ---
