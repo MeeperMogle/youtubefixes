@@ -38,7 +38,7 @@ if (location.href.match(/watch\?/) ){
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
     function setUpReloadButton(){
-        $('#eow-title').html( $('#eow-title').html() + "<input type=submit value='Reload video' id=videoReloader>" );
+        $('#eow-title').html( $('#eow-title').html() + "<br><input type=submit value='Reload video' id=videoReloader>" );
         $('#videoReloader').click( function(){
             ytplayer = document.getElementById("movie_player");
             hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
