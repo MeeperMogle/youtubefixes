@@ -32,6 +32,31 @@ if (location.href.match(/http:/) ){
 // On the Watch-page of a video, scroll down to the video
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
+    
+    doJQuery(setUpReloadButton);
+    
+    // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
+    // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
+    function setUpReloadButton(){
+        $('#eow-title').html( $('#eow-title').html() + "<input type=submit value='Reload video' id=videoReloader>" );
+        $('#videoReloader').click( function(){
+            ytplayer = document.getElementById("movie_player");
+            hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
+            minutes = Math.floor( (ytplayer.getCurrentTime() / 60) );
+            seconds = Math.floor( (ytplayer.getCurrentTime() % 60) );
+            
+            baseURL = "https://www.youtube.com/watch?v=";
+            
+            // Thank you to http://stackoverflow.com/users/220819/jacob-relkin for this easy solution
+            var video_id = window.location.search.split('v=')[1];
+            var ampersandPosition = video_id.indexOf('&');
+            if(ampersandPosition != -1) {
+              video_id = video_id.substring(0, ampersandPosition);
+            }
+            
+            top.location = baseURL + video_id + "&t=" + ( hours + "h" + minutes + "m" + seconds + "s" );
+        });
+    }
 }
 
 // Add Video Views on Playlist-page
