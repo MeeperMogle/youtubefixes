@@ -33,8 +33,6 @@ if (location.href.match(/http:/) ){
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
-    doJQuery(setUpReloadButton);
-    
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
     function setUpReloadButton(){
@@ -57,13 +55,14 @@ if (location.href.match(/watch\?/) ){
             top.location = baseURL + video_id + "&t=" + ( hours + "h" + minutes + "m" + seconds + "s" );
         });
     }
+    
+    doJQuery(setUpReloadButton);
 }
 
 // Add Video Views on Playlist-page
 // Rather than counting number of times the playlist was viewed,
 // count the number of individual video views!
 if (location.href.match(/playlist\?/) ){
-    doJQuery(viewCountOnPlaylist);
     
     function viewCountOnPlaylist(){
         var total = 0;
@@ -88,6 +87,8 @@ if (location.href.match(/playlist\?/) ){
             return x1 + x2;
         }
     }
+    
+    doJQuery(viewCountOnPlaylist);
 }
 
 // Based on http://userscripts.org/scripts/show/120040 from WASDx
