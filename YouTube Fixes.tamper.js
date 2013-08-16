@@ -2,7 +2,7 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.1
+// @version     1.1.1
 // ==/UserScript==
 
 // Inserts code into the page including jQuery support
@@ -39,16 +39,15 @@ if (location.href.match(/redirect\?q=/) ){
 
 if(location.href.match(/feed\/subscriptions/)){
     function initialStuff(){
-        $('.branded-page-v2-secondary-col').remove();
+        //$('.branded-page-v2-secondary-col').remove();
         
-        $('div.feed-author-bubble-container').remove();
         $('.feed-item-main').css('margin','0');
         
         $('div.yt-lockup-description').remove();
         $('div.feed-header').remove();
         
-        $('#page').css('width','100%');
-        $('#content').css('width','70%');
+        $('#page').css('width','90%');
+        $('#content').css('width','80%');
         
         $('#feed').prepend('<table border=0 cellpadding=5 cellspacing=0><tr id=videoTR></tr></table>');
         
