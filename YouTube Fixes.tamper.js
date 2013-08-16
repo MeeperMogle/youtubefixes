@@ -2,7 +2,7 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1
+// @version     1.1
 // ==/UserScript==
 
 // Inserts code into the page including jQuery support
@@ -29,6 +29,197 @@ if (location.href.match(/http:/) ){
     }
 }
 
+if (location.href.match(/redirect\?q=/) ){
+    function redirectThrough(){
+        top.location = $('#baseDiv p').eq(0).children('a').eq(0).html();
+    }
+    
+    doJQuery(redirectThrough);
+}
+
+if(location.href.match(/feed\/subscriptions/)){
+    function initialStuff(){
+        $('.branded-page-v2-secondary-col').remove();
+        
+        $('div.feed-author-bubble-container').remove();
+        $('.feed-item-main').css('margin','0');
+        
+        $('div.yt-lockup-description').remove();
+        $('div.feed-header').remove();
+        
+        $('#page').css('width','100%');
+        $('#content').css('width','70%');
+        
+        $('#feed').prepend('<table border=0 cellpadding=5 cellspacing=0><tr id=videoTR></tr></table>');
+        
+        $( document ).ajaxComplete(function( event,request, settings ) {
+            alert( "<li>Request Complete.</li>" );
+        });
+        
+        var hidden = localStorage.getItem('video_hider'); //get list of hidden videos
+        if(!hidden){
+            //if not found, make it into an empty array
+            hidden = [];
+        }
+        else{
+            hidden = hidden.split(':'); //make our string-item into an array
+        }
+        
+        var hiddenSeries = localStorage.getItem('series_hider');
+        if(!hiddenSeries){
+            hiddenSeries = ["thing i don't watch", "boring thing", "uninteresting thing"];
+        }
+        else{
+            hiddenSeries = hiddenSeries.split('||');
+        }
+        
+        var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
+        var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=23 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
+        $('#guide-subscriptions-section').eq(0).html( unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+                
+        //make our unhide-button clickable
+        $('#clear_hidden_list').click(function(){
+            localStorage.setItem('video_hider', "");
+            //$(this).after('Done. Refresh page to see all videos.');
+            hidden = [];
+            hideTheRightStuff();
+            //$(this).hide();
+        });
+        
+        for(i=0; i<hiddenSeries.length; i++){
+            $('#seriesControlTextarea').val( $('#seriesControlTextarea').val() + hiddenSeries[i] + "\n" );
+        }
+        
+        $('#seriesControlFilterButton').click(function(){
+            var eachEnteredThing = $('#seriesControlTextarea').val().split("\n");
+            
+            hiddenSeries = [];
+            
+            for(i=0; i<eachEnteredThing.length; i++){
+                if(eachEnteredThing[i] != ""){
+                    hiddenSeries.push(eachEnteredThing[i]);
+                }
+            }
+            
+            localStorage.setItem('series_hider', hiddenSeries.join('||'));
+            hideTheRightStuff()
+        });
+        
+        
+        // Base function supplied by http://stackoverflow.com/users/331508/brock-adams
+        function waitForKeyElements (selectorTxt,actionFunction,bWaitOnce,iframeSelector){
+            var targetNodes, btargetsFound;
+            
+            if (typeof iframeSelector == "undefined")
+                targetNodes     = $(selectorTxt);
+            else
+                targetNodes     = $(iframeSelector).contents ()
+                .find (selectorTxt);
+            
+            if (targetNodes  &&  targetNodes.length > 0) {
+                targetNodes.each ( function () {
+                    var jThis        = $(this);
+                    var alreadyFound = jThis.data ('alreadyFound')  ||  false;
+                    
+                    if (!alreadyFound) {
+                        var userLink;
+                        var timeAgo;
+                        var views;
+                        var imageLink;
+                        var titleLink;
+                        
+                        userLink = $(this).children('.feed-item-header').children('.feed-item-actions-line').children('.feed-item-owner').html();
+                        timeAgo = $(this).children('.feed-item-header').children('.feed-item-time').html();
+                        $(this).children('.feed-item-header').remove();
+                        
+                        imageLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-thumbnail').html();
+                        titleLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-title').html();
+                        views = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
+                        
+                        $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>" + timeAgo + " by " + userLink + "<br>" + views + "</td>" );
+                        $(this).parent().parent().remove();
+                        
+                        hideTheRightStuff();
+                        
+                        jThis.data ('alreadyFound', true);
+                    }
+                } );
+                btargetsFound   = true;
+            }
+            else {
+                btargetsFound   = false;
+            }
+            
+            var controlObj      = waitForKeyElements.controlObj  ||  {};
+            var controlKey      = selectorTxt.replace (/[^\w]/g, "_");
+            var timeControl     = controlObj [controlKey];
+            
+            if (btargetsFound  &&  bWaitOnce  &&  timeControl) {
+                clearInterval (timeControl);
+                delete controlObj [controlKey]
+            }
+            else {
+                if ( ! timeControl) {
+                    timeControl = setInterval ( function () {
+                        waitForKeyElements (    selectorTxt, actionFunction, bWaitOnce, iframeSelector );
+                    }, 500);
+                    controlObj [controlKey] = timeControl;
+                }
+            }
+            waitForKeyElements.controlObj   = controlObj;
+        }
+        
+        function testIt(){
+            
+        }
+        
+        waitForKeyElements ("div.feed-item-main", testIt);
+        
+        
+        function hideTheRightStuff(){
+            $('#videoTR td').each(function(){
+                var id = $(this).children("a.ux-thumb-wrap").attr('href'); //get the ID
+                
+                if($.inArray(id, hidden)!=-1 || false){
+                    //remove the video if it's in our array of stuff to hide
+                    $(this).hide();
+                }
+                else{
+                    $(this).show();
+                    // Get the title of the video
+                    var title = $(this).children('a').eq(1).html();
+                    
+                    // Hide the series
+                    for(var i=0; i<hiddenSeries.length; i++){
+                        if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                            $(this).hide();
+                        }
+                    }
+                    
+                    if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
+                        //add basic X button
+                        $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
+                        
+                        var button = $('.hideButton', this);
+                        button.css('cursor', 'pointer'); //change cursor icon when hovering
+                        button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
+                        
+                        //make it clickable
+                        button.click(function(){
+                            hidden.push(id); //add ID to our array
+                            localStorage.setItem('video_hider', hidden.join(':')); //store it
+                            $(this).parent().hide(); //hide the video
+                        });
+                    }
+                }
+            });
+        }
+        hideTheRightStuff();
+    }
+    doJQuery(initialStuff);
+    
+}
+
 // On the Watch-page of a video, scroll down to the video
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
@@ -49,7 +240,7 @@ if (location.href.match(/watch\?/) ){
             var video_id = window.location.search.split('v=')[1];
             var ampersandPosition = video_id.indexOf('&');
             if(ampersandPosition != -1) {
-              video_id = video_id.substring(0, ampersandPosition);
+                video_id = video_id.substring(0, ampersandPosition);
             }
             
             top.location = baseURL + video_id + "&t=" + ( hours + "h" + minutes + "m" + seconds + "s" );
@@ -91,6 +282,9 @@ if (location.href.match(/playlist\?/) ){
     doJQuery(viewCountOnPlaylist);
 }
 
+// NOTE: THIS PART OF THE SCRIPT WAS DEPRECATED WITH THE OLD my_subscriptions PAGE!
+// IT IS KEPT HERE IN CASE IT EVER RETURNS!
+//
 // Based on http://userscripts.org/scripts/show/120040 from WASDx
 // Hide videos from your My Subscriptions-page (https://www.youtube.com/my_subscriptions),
 // which is today the preferred page to visit rather than the bloated Feed (homepage)...
@@ -122,6 +316,10 @@ if (location.href.match(/my_subscriptions/) ){
             
             var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
             $('#yt-admin-sidebar-hh.ytg-1col').eq(0).html( seriesController + $('#yt-admin-sidebar-hh').html() );
+            
+            $('#yt-admin-sidebar-hh.ytg-1col').eq(0).html( seriesController + $('#yt-admin-sidebar-hh').html() );
+            
+            guide-subscriptions-section
             
             for(i=0; i<hiddenSeries.length; i++){
                 $('#seriesControlTextarea').val( $('#seriesControlTextarea').val() + hiddenSeries[i] + "\n" );
@@ -184,43 +382,7 @@ if (location.href.match(/my_subscriptions/) ){
             $('#vm-playlist-copy-to').after(' <button id="clear_hidden_list" class="yt-uix-button">Unhide all manually hidden videos</button>');
         }
         else{
-            // --- We are on the front page ---
             
-            // NOTE: Frontpage has been redone; this code no longer works!
-            
-            //loop through all videos in the subscription box
-         //   $('div.feed-item-container').each(function(){
-         //       var id = $('a.ux-thumb-wrap', this).attr('href'); //get the link
-         //       id = id.substring(9,id.indexOf('&')); //convert link to video ID
-         //       if($.inArray(id, hidden)!=-1){
-                    //remove the video if it's in our array of stuff to hide
-         //           $(this).parent("li").hide();
-         //       }
-         //       else{
-                    //add basic X button
-         //           $('h4', this).after(' <span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
-         //           var button = $('.hideButton', this);
-         //           button.css('cursor', 'pointer'); //change cursor icon when hovering
-         //           button.css('background-color', 'lightgrey').css('float', 'right'); //make it easier to see
-                    //make it clickable
-         //           button.click(function(){ 
-         //               hidden.push(id); //add ID to our array
-         //               localStorage.setItem('video_hider', hidden.join(':')); //store it
-         //               $(this).parents('div.feed-item-container').parent('li').hide(); //hide the video
-         //           });
-         //       }
-         //   });
-            
-            //add button to unhide all
-         //   $('.feed-container').append('<button id="clear_hidden_list" class="yt-uix-button">Unhide all videos</button>');
-            
-            //video thumbnails that are not visible on the screen are not loaded until you scroll down enough
-            //but this addon may bring those thumbnails to the top of the page, showing empty thumbnails
-            //the following code loads all thumbnails to prevent this bug
-         //   $('div.feed-page img[data-thumb]').each(function(){
-         //       var img = $(this).attr('data-thumb');
-         //       $(this).attr('src', img);
-         //   });
         }
         
         //make our unhide-button clickable
