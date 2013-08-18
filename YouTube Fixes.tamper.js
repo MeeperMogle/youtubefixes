@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.1.1
+// @version     1.2
+// @changes     1.2: Increased performance, Watched-functionality.
 // ==/UserScript==
 
 // Inserts code into the page including jQuery support
@@ -39,8 +40,6 @@ if (location.href.match(/redirect\?q=/) ){
 
 if(location.href.match(/feed\/subscriptions/)){
     function initialStuff(){
-        //$('.branded-page-v2-secondary-col').remove();
-        
         $('.feed-item-main').css('margin','0');
         
         $('div.yt-lockup-description').remove();
@@ -54,6 +53,16 @@ if(location.href.match(/feed\/subscriptions/)){
         $( document ).ajaxComplete(function( event,request, settings ) {
             alert( "<li>Request Complete.</li>" );
         });
+        
+        // Watched-patch
+        var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
+        if(!watchedVideos){
+            //if not found, make it into an empty array
+            watchedVideos = ['21'];
+        }
+        else{
+            watchedVideos = watchedVideos.split(':'); //make our string-item into an array
+        }
         
         var hidden = localStorage.getItem('video_hider'); //get list of hidden videos
         if(!hidden){
@@ -72,10 +81,11 @@ if(location.href.match(/feed\/subscriptions/)){
             hiddenSeries = hiddenSeries.split('||');
         }
         
+        var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched checked>'
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
         var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=23 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
-        $('#guide-subscriptions-section').eq(0).html( unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
-                
+        $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+        
         //make our unhide-button clickable
         $('#clear_hidden_list').click(function(){
             localStorage.setItem('video_hider', "");
@@ -174,45 +184,61 @@ if(location.href.match(/feed\/subscriptions/)){
         
         waitForKeyElements ("div.feed-item-main", testIt);
         
-        
         function hideTheRightStuff(){
             $('#videoTR td').each(function(){
-                var id = $(this).children("a.ux-thumb-wrap").attr('href'); //get the ID
+                var id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
                 
-                if($.inArray(id, hidden)!=-1 || false){
+                if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
                     //remove the video if it's in our array of stuff to hide
                     $(this).hide();
                 }
-                else{
-                    $(this).show();
-                    // Get the title of the video
-                    var title = $(this).children('a').eq(1).html();
-                    
-                    // Hide the series
-                    for(var i=0; i<hiddenSeries.length; i++){
-                        if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
-                            $(this).hide();
+                else if( ($('#hideWatched').prop('checked') && $.inArray(id, watchedVideos) != -1) ){
+                    // Watched looks
+                    $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
+                    $(this).addClass('customWatched');
+                    $(this).hide();
+                }
+                    else{
+                        $(this).show();
+                        // Get the title of the video
+                        var title = $(this).children('a').eq(1).html();
+                        
+                        // Hide the series
+                        for(var i=0; i<hiddenSeries.length; i++){
+                            if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                                $(this).hide();
+                            }
+                        }
+                        
+                        if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
+                            //add basic X button
+                            $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
+                            
+                            var button = $('.hideButton', this);
+                            button.css('cursor', 'pointer'); //change cursor icon when hovering
+                            button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
+                            
+                            //make it clickable
+                            button.click(function(){
+                                hidden.push(id); //add ID to our array
+                                localStorage.setItem('video_hider', hidden.join(':')); //store it
+                                $(this).parent().hide(); //hide the video
+                            });
                         }
                     }
-                    
-                    if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
-                        //add basic X button
-                        $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
-                        
-                        var button = $('.hideButton', this);
-                        button.css('cursor', 'pointer'); //change cursor icon when hovering
-                        button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
-                        
-                        //make it clickable
-                        button.click(function(){
-                            hidden.push(id); //add ID to our array
-                            localStorage.setItem('video_hider', hidden.join(':')); //store it
-                            $(this).parent().hide(); //hide the video
-                        });
-                    }
-                }
             });
         }
+        
+        $('#hideWatched').mousedown(function() {
+            if ($(this).is(':checked')) {
+                // goes unchecked
+                $('.customWatched').show();
+            }
+            else{
+                // goes checked
+                $('.customWatched').hide();
+            }
+        });
         hideTheRightStuff();
     }
     doJQuery(initialStuff);
@@ -246,7 +272,33 @@ if (location.href.match(/watch\?/) ){
         });
     }
     
+    // Create a custom Watched-system.
+    function watchedVideo(){
+        // Get watched videos
+        var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
+        if(!watchedVideos){
+            //if not found, make it into an empty array
+            watchedVideos = ['21'];
+        }
+        else{
+            watchedVideos = watchedVideos.split(':'); //make our string-item into an array
+        }
+        
+        var video_id = window.location.search.split('v=')[1];
+        var ampersandPosition = video_id.indexOf('&');
+        if(ampersandPosition != -1) {
+            video_id = video_id.substring(0, ampersandPosition);
+        }
+        
+        if( $.inArray(video_id,watchedVideos) == -1 ){
+            watchedVideos.push(video_id); //add ID to our array
+            localStorage.setItem('watched_hider', watchedVideos.join(':')); //store it
+        }
+        
+    }
+    
     doJQuery(setUpReloadButton);
+    doJQuery(watchedVideo);
 }
 
 // Add Video Views on Playlist-page
