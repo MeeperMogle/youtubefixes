@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.2
+// @version     1.2.1
+// @changes     1.2.1: Fixes to hide Watched, since YouTube has changed some things.
 // @changes     1.2: Increased performance, Watched-functionality.
 // ==/UserScript==
 
@@ -192,7 +193,7 @@ if(location.href.match(/feed\/subscriptions/)){
                     //remove the video if it's in our array of stuff to hide
                     $(this).hide();
                 }
-                else if( ($('#hideWatched').prop('checked') && $.inArray(id, watchedVideos) != -1) ){
+                else if( ($('#hideWatched').prop('checked') && ($.inArray(id, watchedVideos) != -1) || $(this).html().indexOf('watched-message') > -1 ) ){
                     // Watched looks
                     $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
                     $(this).addClass('customWatched');
