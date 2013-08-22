@@ -2,7 +2,9 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.2.1
+// @version     1.5
+// @changes     1.5: Checkboxes are remembered. Optional Regular Expression-based filtering added (beta function). Upgraded to JQuery 2.0.3
+// @changes     1.2.2: Added LOAD ALL-button. Filter-list is now alphabetical.
 // @changes     1.2.1: Fixes to hide Watched, since YouTube has changed some things.
 // @changes     1.2: Increased performance, Watched-functionality.
 // ==/UserScript==
@@ -10,7 +12,7 @@
 // Inserts code into the page including jQuery support
 function doJQuery(callback) {
     var script = document.createElement("script");
-    script.setAttribute("src", "https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js");
+    script.setAttribute("src", "https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js");
     script.addEventListener('load', function() {
         var script = document.createElement("script");
         script.textContent = "(" + callback.toString() + ")();";
@@ -41,6 +43,17 @@ if (location.href.match(/redirect\?q=/) ){
 
 if(location.href.match(/feed\/subscriptions/)){
     function initialStuff(){
+        // Checkbox-settings
+        var boxes = localStorage.getItem('boxes_hider'); //get list of hidden videos
+        if(!boxes){
+            //if not found, make it into an empty array
+            boxes = {"hideWatched":true, "useRegex":false};
+            localStorage.setItem('boxes_hider', JSON.stringify(boxes));
+        }
+        else{
+            boxes = JSON.parse(boxes); //make our string-item into an array
+        }
+        
         $('.feed-item-main').css('margin','0');
         
         $('div.yt-lockup-description').remove();
@@ -49,11 +62,25 @@ if(location.href.match(/feed\/subscriptions/)){
         $('#page').css('width','90%');
         $('#content').css('width','80%');
         
+        $('.feed-load-more-container').eq(0).html( $('.feed-load-more-container').eq(0).html()  + '<input type=submit value="LOAD ALL" id=loadALL>');
+        $('#loadALL').click(function(){
+            var r=confirm("Warning: Loading all videos will make the page run slow until it's done.\nPress OK to load, Cancel to abort.")
+            if (r==true){
+                var continues = true;
+                setInterval(function(){
+                    if(continues){
+                        $('.feed-load-more').eq(0).attr('id','loadsMore');
+                        document.getElementById('loadsMore').click();
+                        
+                        if( $('.feed-load-more-container').attr('style') == 'display: none;' )
+                            continues = false;
+                    }
+                }, 1000);
+            }
+        });
+        
         $('#feed').prepend('<table border=0 cellpadding=5 cellspacing=0><tr id=videoTR></tr></table>');
         
-        $( document ).ajaxComplete(function( event,request, settings ) {
-            alert( "<li>Request Complete.</li>" );
-        });
         
         // Watched-patch
         var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
@@ -82,10 +109,22 @@ if(location.href.match(/feed\/subscriptions/)){
             hiddenSeries = hiddenSeries.split('||');
         }
         
-        var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched checked>'
+        var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched>';
+        var useRegexBox = 'RegEx in filters (<a href="" id=whatIsRegex>?</a>) <input type=checkbox id=useRegex>';
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
-        var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=23 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
-        $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+        var seriesController = "<h2>Videos to filter</h2><textarea style='margin-left:-30px' id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
+        $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+        
+        $('#whatIsRegex').click(function(){
+        	window.open("http://www.w3schools.com/jsref/jsref_obj_regexp.asp", '_blank');
+            return false;
+        });
+        
+        // Make the checkboxes correspond with the saved settings
+        $('#hideWatched').prop('checked', boxes.hideWatched);
+        $('#useRegex').prop('checked', boxes.useRegex);
+        
+        
         
         //make our unhide-button clickable
         $('#clear_hidden_list').click(function(){
@@ -110,7 +149,7 @@ if(location.href.match(/feed\/subscriptions/)){
                     hiddenSeries.push(eachEnteredThing[i]);
                 }
             }
-            
+            hiddenSeries.sort();
             localStorage.setItem('series_hider', hiddenSeries.join('||'));
             hideTheRightStuff()
         });
@@ -206,8 +245,17 @@ if(location.href.match(/feed\/subscriptions/)){
                         
                         // Hide the series
                         for(var i=0; i<hiddenSeries.length; i++){
-                            if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                            if( boxes.useRegex ){
+                                var regex = new RegExp(hiddenSeries[i], "gim");
+                                
+                                if( title.match(regex) ){
+                                    $(this).hide();
+                                    break;
+                                }
+                            }
+                            else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
                                 $(this).hide();
+                                break;
                             }
                         }
                         
@@ -228,18 +276,40 @@ if(location.href.match(/feed\/subscriptions/)){
                         }
                     }
             });
+            
+            if( !boxes.hideWatched )
+                $('.customWatched').show();
         }
         
         $('#hideWatched').mousedown(function() {
             if ($(this).is(':checked')) {
                 // goes unchecked
                 $('.customWatched').show();
+                
+                boxes.hideWatched = false;
             }
             else{
                 // goes checked
                 $('.customWatched').hide();
+                
+                boxes.hideWatched = true;
             }
+            localStorage.setItem('boxes_hider', JSON.stringify(boxes) ); //store it
         });
+        
+        $('#useRegex').mousedown(function() {
+            if ($(this).is(':checked')) {
+                // goes unchecked
+                boxes.useRegex = false;
+            }
+            else{
+                // goes checked
+                boxes.useRegex = true;
+            }
+            localStorage.setItem('boxes_hider', JSON.stringify(boxes) ); //store it
+            hideTheRightStuff();
+        });
+        
         hideTheRightStuff();
     }
     doJQuery(initialStuff);
