@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.5
+// @version     1.6
+// @changes     1.6: New feature: Define the width and height of the YouTube player! Also fixed broken "Uploaded X minutes ago".
 // @changes     1.5: Checkboxes are remembered. Optional Regular Expression-based filtering added (beta function). Upgraded to JQuery 2.0.3
 // @changes     1.2.2: Added LOAD ALL-button. Filter-list is now alphabetical.
 // @changes     1.2.1: Fixes to hide Watched, since YouTube has changed some things.
@@ -20,6 +21,11 @@ function doJQuery(callback) {
     }, false);
     document.body.appendChild(script);
 }
+
+function fixInbox(){
+    $('#masthead-expanded-menu-list').append('<li class="masthead-expanded-menu-item"><a href="/inbox" class="yt-uix-sessionlink" data-sessionlink="' + $('a.yt-uix-sessionlink').attr("data-sessionlink") + '">Inbox</a></li>');
+}
+doJQuery(fixInbox);
 
 // Redirects you from HTTP to HTTPS
 if (location.href.match(/http:/) ){
@@ -75,7 +81,7 @@ if(location.href.match(/feed\/subscriptions/)){
                         if( $('.feed-load-more-container').attr('style') == 'display: none;' )
                             continues = false;
                     }
-                }, 1000);
+                }, 2000);
             }
         });
         
@@ -178,11 +184,12 @@ if(location.href.match(/feed\/subscriptions/)){
                         var titleLink;
                         
                         userLink = $(this).children('.feed-item-header').children('.feed-item-actions-line').children('.feed-item-owner').html();
-                        timeAgo = $(this).children('.feed-item-header').children('.feed-item-time').html();
+                        //timeAgo = $(this).children('.feed-item-header').children('.feed-item-time').html();
                         $(this).children('.feed-item-header').remove();
                         
                         imageLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-title').html();
+                        timeAgo = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
                         views = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
                         
                         $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>" + timeAgo + " by " + userLink + "<br>" + views + "</td>" );
@@ -316,14 +323,60 @@ if(location.href.match(/feed\/subscriptions/)){
     
 }
 
-// On the Watch-page of a video, scroll down to the video
+// On the Watch-page
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
+    
+    function addChangePlayerSizeControls(){
+        var playerWidth;
+        var playerHeight;
+        var savedCustomSize = localStorage.getItem('savedCustomSize');
+        
+        if( !savedCustomSize ){
+            playerWidth = $('#player-api').css('width').replace('px','');
+            playerHeight = $('#player-api').css('height').replace('px','');
+            savedCustomSize = playerWidth + ':' + playerHeight;
+            localStorage.setItem('savedCustomSize', savedCustomSize);
+        }
+        else{
+            playerWidth = savedCustomSize.split(':')[0];
+            playerHeight = savedCustomSize.split(':')[1];
+        }
+        
+        $('#eow-title').append( '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' );
+        $('#eow-title').append( '<input type=checkbox id=autoUpdateSize> ' );
+        $('#eow-title').append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
+        $('#eow-title').append( ' <input type=submit id=customSizeSaveButton value="Save">' );
+        
+        $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
+		$('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
+        $('#customSizeSaveButton').hide();
+        
+        $('#customPlayerWidth').keyup(function(){
+            if( $('#autoUpdateSize').is(':checked') )
+        		$('#player-api').css('width', $(this).val() + 'px');
+            $('#customSizeSaveButton').show();
+        });
+        $('#customPlayerHeight').keyup(function(){
+        	if( $('#autoUpdateSize').is(':checked') )
+        		$('#player-api').css('height', $(this).val() + 'px');
+            $('#customSizeSaveButton').show();
+        });
+        $('#customSizeSaveButton').click(function(){
+            $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
+            $('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
+            
+            savedCustomSize = $('#customPlayerWidth').val() + ':' + $('#customPlayerHeight').val();
+            localStorage.setItem('savedCustomSize', savedCustomSize);
+            
+            $(this).hide();
+        });
+    }
     
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
     function setUpReloadButton(){
-        $('#eow-title').html( $('#eow-title').html() + "<br><input type=submit value='Reload video' id=videoReloader>" );
+        $('#eow-title').append( "<br><input type=submit value='Reload video' id=videoReloader>" );
         $('#videoReloader').click( function(){
             ytplayer = document.getElementById("movie_player");
             hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
@@ -360,15 +413,14 @@ if (location.href.match(/watch\?/) ){
         if(ampersandPosition != -1) {
             video_id = video_id.substring(0, ampersandPosition);
         }
-        
         if( $.inArray(video_id,watchedVideos) == -1 ){
             watchedVideos.push(video_id); //add ID to our array
             localStorage.setItem('watched_hider', watchedVideos.join(':')); //store it
-        }
-        
+        }   
     }
     
     doJQuery(setUpReloadButton);
+    doJQuery(addChangePlayerSizeControls);
     doJQuery(watchedVideo);
 }
 
