@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6
+// @version     1.6.1
+// @changes     1.6.1: Some minor fixes to the previous additions.
 // @changes     1.6: New feature: Define the width and height of the YouTube player! Also fixed broken "Uploaded X minutes ago".
 // @changes     1.5: Checkboxes are remembered. Optional Regular Expression-based filtering added (beta function). Upgraded to JQuery 2.0.3
 // @changes     1.2.2: Added LOAD ALL-button. Filter-list is now alphabetical.
@@ -343,10 +344,9 @@ if (location.href.match(/watch\?/) ){
             playerHeight = savedCustomSize.split(':')[1];
         }
         
-        $('#eow-title').append( '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' );
-        $('#eow-title').append( '<input type=checkbox id=autoUpdateSize> ' );
-        $('#eow-title').append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
-        $('#eow-title').append( ' <input type=submit id=customSizeSaveButton value="Save">' );
+        $('#eow-title').parent().parent().append( '<input type=checkbox id=autoUpdateSize> ' );
+        $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
+        $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
         
         $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
 		$('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
@@ -376,7 +376,7 @@ if (location.href.match(/watch\?/) ){
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
     function setUpReloadButton(){
-        $('#eow-title').append( "<br><input type=submit value='Reload video' id=videoReloader>" );
+        $('#eow-title').parent().parent().append( "<input type=submit value='Reload video' id=videoReloader>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" );
         $('#videoReloader').click( function(){
             ytplayer = document.getElementById("movie_player");
             hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
