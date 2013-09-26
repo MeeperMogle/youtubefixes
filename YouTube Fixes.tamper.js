@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.1
+// @version     1.6.2
+// @changes     1.6.2: Bound Enter and Spacebar to always Play/Pause the video (no scrolling on Spacebar). The work of commenting the code has begun!
 // @changes     1.6.1: Some minor fixes to the previous additions.
 // @changes     1.6: New feature: Define the width and height of the YouTube player! Also fixed broken "Uploaded X minutes ago".
 // @changes     1.5: Checkboxes are remembered. Optional Regular Expression-based filtering added (beta function). Upgraded to JQuery 2.0.3
@@ -10,6 +11,16 @@
 // @changes     1.2.1: Fixes to hide Watched, since YouTube has changed some things.
 // @changes     1.2: Increased performance, Watched-functionality.
 // ==/UserScript==
+
+// CTRL+F to access parts of the code quickly:
+// Codepart 1: Global stuff - Adds link to the Inbox to the header again, redirects to HTTPS...
+// Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
+// Codepart 3: The Watch-page - Adds functionality for Watched-functionality, customize player size...
+// Codepart 4: Playlist - Adds counter to the Playlist-pages that show the total number of views for all the videos in the playlist.
+
+// Codepart 10: My_subscriptions page. The My_subscriptions page has been deprecated by YouTube. The code is still here in case they bring it back.
+
+
 
 // Inserts code into the page including jQuery support
 function doJQuery(callback) {
@@ -23,6 +34,9 @@ function doJQuery(callback) {
     document.body.appendChild(script);
 }
 
+
+// ----------------------------------------------------------------------------------------------------
+// Codepart 1: Global stuff - Adds link to the Inbox to the header again, redirects to HTTPS...
 function fixInbox(){
     $('#masthead-expanded-menu-list').append('<li class="masthead-expanded-menu-item"><a href="/inbox" class="yt-uix-sessionlink" data-sessionlink="' + $('a.yt-uix-sessionlink').attr("data-sessionlink") + '">Inbox</a></li>');
 }
@@ -47,7 +61,10 @@ if (location.href.match(/redirect\?q=/) ){
     
     doJQuery(redirectThrough);
 }
+// ----------------------------------------------------------------------------------------------------
 
+
+// Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
 if(location.href.match(/feed\/subscriptions/)){
     function initialStuff(){
         // Checkbox-settings
@@ -123,7 +140,7 @@ if(location.href.match(/feed\/subscriptions/)){
         $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
         
         $('#whatIsRegex').click(function(){
-        	window.open("http://www.w3schools.com/jsref/jsref_obj_regexp.asp", '_blank');
+            window.open("http://www.w3schools.com/jsref/jsref_obj_regexp.asp", '_blank');
             return false;
         });
         
@@ -265,7 +282,7 @@ if(location.href.match(/feed\/subscriptions/)){
                                 $(this).hide();
                                 break;
                             }
-                        }
+                                }
                         
                         if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
                             //add basic X button
@@ -323,10 +340,29 @@ if(location.href.match(/feed\/subscriptions/)){
     doJQuery(initialStuff);
     
 }
+// ----------------------------------------------------------------------------------------------------
 
-// On the Watch-page
+// Codepart 3: The Watch-page. Adds functionality for Watched-functionality, customize player size...
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
+    
+    function spacebarToPause(){
+        $(document).keydown(function(evt) {
+            if (evt.keyCode == 13 || evt.keyCode == 32) {
+                ytplayer = document.getElementById("movie_player");
+                
+                ytplayer.blur();
+                
+                if( ytplayer.getPlayerState() == 1 )
+                	ytplayer.pauseVideo();
+                else if( ytplayer.getPlayerState() == 2 )
+                    ytplayer.playVideo();
+            }
+            
+            return !(evt.keyCode == 32);
+        });
+    }
+    doJQuery(spacebarToPause);
     
     function addChangePlayerSizeControls(){
         var playerWidth;
@@ -349,17 +385,17 @@ if (location.href.match(/watch\?/) ){
         $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
         
         $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
-		$('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
+        $('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
         $('#customSizeSaveButton').hide();
         
         $('#customPlayerWidth').keyup(function(){
             if( $('#autoUpdateSize').is(':checked') )
-        		$('#player-api').css('width', $(this).val() + 'px');
+                $('#player-api').css('width', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customPlayerHeight').keyup(function(){
-        	if( $('#autoUpdateSize').is(':checked') )
-        		$('#player-api').css('height', $(this).val() + 'px');
+            if( $('#autoUpdateSize').is(':checked') )
+                $('#player-api').css('height', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customSizeSaveButton').click(function(){
@@ -423,10 +459,9 @@ if (location.href.match(/watch\?/) ){
     doJQuery(addChangePlayerSizeControls);
     doJQuery(watchedVideo);
 }
+// ----------------------------------------------------------------------------------------------------
 
-// Add Video Views on Playlist-page
-// Rather than counting number of times the playlist was viewed,
-// count the number of individual video views!
+// Codepart 4: Playlist. Adds counter to the Playlist-pages that show the total number of views for all the videos in the playlist.
 if (location.href.match(/playlist\?/) ){
     
     function viewCountOnPlaylist(){
@@ -455,6 +490,10 @@ if (location.href.match(/playlist\?/) ){
     
     doJQuery(viewCountOnPlaylist);
 }
+// ----------------------------------------------------------------------------------------------------
+
+
+// Codepart 10: My_subscriptions page. The My_subscriptions page has been deprecated by YouTube. The code is still here in case they bring it back.
 
 // NOTE: THIS PART OF THE SCRIPT WAS DEPRECATED WITH THE OLD my_subscriptions PAGE!
 // IT IS KEPT HERE IN CASE IT EVER RETURNS!
