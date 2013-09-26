@@ -1,4 +1,5 @@
-- (NEW!) Customize the size of the YouTube player - save the change. 
+- (NEW!) Bound Enter and Spacebar to Play/Pause the video (no scrolling on Spacebar!).
+- Customize the size of the YouTube player - save the change. 
 - Optional Watched-functionality! Also increased performance. 
 - Makes the new Feed look more like the My_Subscriptions-page, with a Grid view. 
 - Reload-button in case the video bugs out; continues on same video time 
