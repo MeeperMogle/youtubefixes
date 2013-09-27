@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.2
+// @version     1.6.2.1
+// @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
 // @changes     1.6.2: Bound Enter and Spacebar to always Play/Pause the video (no scrolling on Spacebar). The work of commenting the code has begun!
 // @changes     1.6.1: Some minor fixes to the previous additions.
 // @changes     1.6: New feature: Define the width and height of the YouTube player! Also fixed broken "Uploaded X minutes ago".
@@ -357,9 +358,13 @@ if (location.href.match(/watch\?/) ){
                 	ytplayer.pauseVideo();
                 else if( ytplayer.getPlayerState() == 2 )
                     ytplayer.playVideo();
+                    
+                    //alert(document.activeElement.tagName);
             }
             
-            return !(evt.keyCode == 32);
+            
+            
+            return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea");
         });
     }
     doJQuery(spacebarToPause);
