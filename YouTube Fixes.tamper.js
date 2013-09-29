@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.2.1
+// @version     1.6.3
+// @changes     1.6.3: Minor fixees. Deleted deprecated code; can be found in old versions.
 // @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
 // @changes     1.6.2: Bound Enter and Spacebar to always Play/Pause the video (no scrolling on Spacebar). The work of commenting the code has begun!
 // @changes     1.6.1: Some minor fixes to the previous additions.
@@ -18,8 +19,6 @@
 // Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
 // Codepart 3: The Watch-page - Adds functionality for Watched-functionality, customize player size...
 // Codepart 4: Playlist - Adds counter to the Playlist-pages that show the total number of views for all the videos in the playlist.
-
-// Codepart 10: My_subscriptions page. The My_subscriptions page has been deprecated by YouTube. The code is still here in case they bring it back.
 
 
 
@@ -347,11 +346,13 @@ if(location.href.match(/feed\/subscriptions/)){
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
+    ytplayer = document.getElementById("movie_player");
+    ytplayer.pauseVideo(); // stop autoplay
+    
     function spacebarToPause(){
         $(document).keydown(function(evt) {
             if (evt.keyCode == 13 || evt.keyCode == 32) {
                 ytplayer = document.getElementById("movie_player");
-                
                 ytplayer.blur();
                 
                 if( ytplayer.getPlayerState() == 1 )
@@ -494,124 +495,4 @@ if (location.href.match(/playlist\?/) ){
     }
     
     doJQuery(viewCountOnPlaylist);
-}
-// ----------------------------------------------------------------------------------------------------
-
-
-// Codepart 10: My_subscriptions page. The My_subscriptions page has been deprecated by YouTube. The code is still here in case they bring it back.
-
-// NOTE: THIS PART OF THE SCRIPT WAS DEPRECATED WITH THE OLD my_subscriptions PAGE!
-// IT IS KEPT HERE IN CASE IT EVER RETURNS!
-//
-// Based on http://userscripts.org/scripts/show/120040 from WASDx
-// Hide videos from your My Subscriptions-page (https://www.youtube.com/my_subscriptions),
-// which is today the preferred page to visit rather than the bloated Feed (homepage)...
-//
-// News:
-// - Instantly filter out videos based on their name
-// - Instantly show all hidden videos
-if (location.href.match(/my_subscriptions/) ){
-    function main(){
-        var hidden = localStorage.getItem('video_hider'); //get list of hidden videos
-        if(!hidden){
-            //if not found, make it into an empty array
-            hidden = [];
-        }
-        else{
-            hidden = hidden.split(':'); //make our string-item into an array
-        }
-        
-        var hiddenSeries = localStorage.getItem('series_hider');
-        if(!hiddenSeries){
-            hiddenSeries = ["thing i don't watch", "boring thing", "uninteresting thing"];
-        }
-        else{
-            hiddenSeries = hiddenSeries.split('||');
-        }
-        
-        if(document.location.href.indexOf("my_subscriptions") != -1){
-            // --- We are on my_subscriptions ---
-            
-            var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
-            $('#yt-admin-sidebar-hh.ytg-1col').eq(0).html( seriesController + $('#yt-admin-sidebar-hh').html() );
-            
-            $('#yt-admin-sidebar-hh.ytg-1col').eq(0).html( seriesController + $('#yt-admin-sidebar-hh').html() );
-            
-            guide-subscriptions-section
-            
-            for(i=0; i<hiddenSeries.length; i++){
-                $('#seriesControlTextarea').val( $('#seriesControlTextarea').val() + hiddenSeries[i] + "\n" );
-            }
-            
-            $('#seriesControlFilterButton').click(function(){
-                var eachEnteredThing = $('#seriesControlTextarea').val().split("\n");
-                
-                hiddenSeries = [];
-                
-                for(i=0; i<eachEnteredThing.length; i++){
-                    if(eachEnteredThing[i] != ""){
-                        hiddenSeries.push(eachEnteredThing[i]);
-                    }
-                }
-                
-                localStorage.setItem('series_hider', hiddenSeries.join('||'));
-                hideTheRightStuff()
-            });
-            
-            hideTheRightStuff();
-            function hideTheRightStuff(){
-                $('#vm-playlist-video-list-ol li.vm-video-item').each(function(){
-                    var id = $(this).attr('id').substr(9); //get the ID
-                    
-                    if($.inArray(id, hidden)!=-1 || false){
-                        //remove the video if it's in our array of stuff to hide
-                        $(this).hide();
-                    }
-                    else{
-                        $(this).show();
-                        // Get the title of the video
-                        var title = $(this).children().eq(0).children().eq(0).children().eq(0).children().eq(0).html();
-                        
-                        // Hide the series
-                        for(var i=0; i<hiddenSeries.length; i++){
-                            if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
-                                $(this).hide();
-                            }
-                        }
-                        
-                        if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
-                            //add basic X button
-                            $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
-                            var button = $('.hideButton', this);
-                            button.css('cursor', 'pointer'); //change cursor icon when hovering
-                            button.css('background-color', 'lightgrey').css('float', 'right'); //make it easier to see
-                            //make it clickable
-                            button.click(function(){
-                                hidden.push(id); //add ID to our array
-                                localStorage.setItem('video_hider', hidden.join(':')); //store it
-                                $(this).parents('li.vm-video-item').hide(); //hide the video
-                            });
-                        }
-                    }
-                });
-            }
-            
-            //add button to unhide all
-            $('#vm-playlist-copy-to').after(' <button id="clear_hidden_list" class="yt-uix-button">Unhide all manually hidden videos</button>');
-        }
-        else{
-            
-        }
-        
-        //make our unhide-button clickable
-        $('#clear_hidden_list').click(function(){
-            localStorage.setItem('video_hider', "");
-            //$(this).after('Done. Refresh page to see all videos.');
-            hidden = [];
-            hideTheRightStuff();
-            //$(this).hide();
-        });
-        
-    }
-    doJQuery(main);
 }
