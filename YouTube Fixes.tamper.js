@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.3
+// @version     1.6.5
+// @changes     1.6.5: Performance increased. Enhanced Watched-detection.
 // @changes     1.6.3: Minor fixees. Deleted deprecated code; can be found in old versions.
 // @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
 // @changes     1.6.2: Bound Enter and Spacebar to always Play/Pause the video (no scrolling on Spacebar). The work of commenting the code has begun!
@@ -256,8 +257,8 @@ if(location.href.match(/feed\/subscriptions/)){
                 if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
                     //remove the video if it's in our array of stuff to hide
                     $(this).hide();
-                }
-                else if( ($('#hideWatched').prop('checked') && ($.inArray(id, watchedVideos) != -1) || $(this).html().indexOf('watched-message') > -1 ) ){
+                } // 
+                else if( ($('#hideWatched').prop('checked') && $(this).html().indexOf('watched-badge') > -1) || ($('#hideWatched').prop('checked') && ($.inArray(id, watchedVideos) != -1) || $(this).html().indexOf('watched-message') > -1 ) ){
                     // Watched looks
                     $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
                     $(this).addClass('customWatched');
@@ -347,11 +348,15 @@ if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
     ytplayer = document.getElementById("movie_player");
-    ytplayer.pauseVideo(); // stop autoplay
+    setTimeout(pauseVideo,500);
+    
+    function pauseVideo(){
+        ytplayer.pauseVideo(); // stop autoplay
+    }
     
     function spacebarToPause(){
         $(document).keydown(function(evt) {
-            if (evt.keyCode == 13 || evt.keyCode == 32) {
+            if ((evt.keyCode == 13 || evt.keyCode == 32) && document.activeElement.tagName.toLowerCase() != "textarea" && document.activeElement.tagName.toLowerCase() != "input") {
                 ytplayer = document.getElementById("movie_player");
                 ytplayer.blur();
                 
@@ -365,7 +370,7 @@ if (location.href.match(/watch\?/) ){
             
             
             
-            return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea");
+            return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea" && document.activeElement.tagName.toLowerCase() != "input");
         });
     }
     doJQuery(spacebarToPause);
