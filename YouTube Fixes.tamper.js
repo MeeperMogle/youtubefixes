@@ -2,8 +2,7 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.6
-// @changes     1.6.6: Attempts to fix visual bug occurring for some.
+// @version     1.6.5
 // @changes     1.6.5: Performance increased. Enhanced Watched-detection.
 // @changes     1.6.3: Minor fixees. Deleted deprecated code; can be found in old versions.
 // @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
@@ -358,11 +357,11 @@ if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
     ytplayer = document.getElementById("movie_player");
-    setTimeout(pauseVideo,500);
     
     function pauseVideo(){
         ytplayer.pauseVideo(); // stop autoplay
     }
+    setTimeout(pauseVideo,500);
     
     function spacebarToPause(){
         $(document).keydown(function(evt) {
