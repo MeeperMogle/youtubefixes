@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.5
+// @version     1.6.6
+// @changes     1.6.6: Attempts to fix visual bug occurring for some.
 // @changes     1.6.5: Performance increased. Enhanced Watched-detection.
 // @changes     1.6.3: Minor fixees. Deleted deprecated code; can be found in old versions.
 // @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
@@ -137,8 +138,17 @@ if(location.href.match(/feed\/subscriptions/)){
         var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched>';
         var useRegexBox = 'RegEx in filters (<a href="" id=whatIsRegex>?</a>) <input type=checkbox id=useRegex>';
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
-        var seriesController = "<h2>Videos to filter</h2><textarea style='margin-left:-30px' id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
+        var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
         $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+        
+        $('#seriesControlTextarea').css('display','block');
+        $('#seriesControlTextarea').css('width','100%');
+        $('#seriesControlTextarea').css('height','150px');
+        $('#seriesControlTextarea').css('padding','0');
+        $('#seriesControlTextarea').css('border','1px solid #000');
+        $('#seriesControlTextarea').css('margin','0 auto');
+        $('#seriesControlTextarea').css('margin-left','-40px');
+        $('#seriesControlTextarea').css('overflow','auto');
         
         $('#whatIsRegex').click(function(){
             window.open("http://www.w3schools.com/jsref/jsref_obj_regexp.asp", '_blank');
