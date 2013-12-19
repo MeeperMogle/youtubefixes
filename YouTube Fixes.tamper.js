@@ -2,7 +2,9 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.5
+// @version     1.6.7
+// @changes     1.6.7: Bug fixes related to the Watch-page, including resize of HTML5-videos.
+// @changes     1.6.6: Attempts to fix visual bug occurring for some.
 // @changes     1.6.5: Performance increased. Enhanced Watched-detection.
 // @changes     1.6.3: Minor fixees. Deleted deprecated code; can be found in old versions.
 // @changes     1.6.2.1: Broke Spacebar so you couldn't comment. Whoops... Fixed it!
@@ -357,11 +359,11 @@ if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
     ytplayer = document.getElementById("movie_player");
+    setTimeout(pauseVideo,2000);
     
     function pauseVideo(){
         ytplayer.pauseVideo(); // stop autoplay
     }
-    setTimeout(pauseVideo,500);
     
     function spacebarToPause(){
         $(document).keydown(function(evt) {
@@ -377,12 +379,15 @@ if (location.href.match(/watch\?/) ){
                     //alert(document.activeElement.tagName);
             }
             
-            
-            
             return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea" && document.activeElement.tagName.toLowerCase() != "input");
         });
     }
     doJQuery(spacebarToPause);
+    
+    function lookOnReddit(){
+        $("#action-panel-details").prepend( "<a target=_blank href='http://www.reddit.com/search?q=" + $("#eow-title").attr('title').replace(/'/, '').replace(/  /,' ') + "'>Search on Reddit</a>" );
+    }
+    doJQuery(lookOnReddit);
     
     function addChangePlayerSizeControls(){
         var playerWidth;
@@ -390,8 +395,8 @@ if (location.href.match(/watch\?/) ){
         var savedCustomSize = localStorage.getItem('savedCustomSize');
         
         if( !savedCustomSize ){
-            playerWidth = $('#player-api').css('width').replace('px','');
-            playerHeight = $('#player-api').css('height').replace('px','');
+            playerWidth = $('#player-api, .video-stream.html5-main-video').css('width').replace('px','');
+            playerHeight = $('#player-api, .video-stream.html5-main-video').css('height').replace('px','');
             savedCustomSize = playerWidth + ':' + playerHeight;
             localStorage.setItem('savedCustomSize', savedCustomSize);
         }
@@ -404,23 +409,23 @@ if (location.href.match(/watch\?/) ){
         $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
         $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
         
-        $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
-        $('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
+        $('#player-api, .video-stream.html5-main-video').css('width', $('#customPlayerWidth').val() + 'px');
+        $('#player-api, .video-stream.html5-main-video').css('height', $('#customPlayerHeight').val() + 'px');
         $('#customSizeSaveButton').hide();
         
         $('#customPlayerWidth').keyup(function(){
             if( $('#autoUpdateSize').is(':checked') )
-                $('#player-api').css('width', $(this).val() + 'px');
+                $('#player-api, .video-stream.html5-main-video').css('width', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customPlayerHeight').keyup(function(){
             if( $('#autoUpdateSize').is(':checked') )
-                $('#player-api').css('height', $(this).val() + 'px');
+                $('#player-api, .video-stream.html5-main-video').css('height', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customSizeSaveButton').click(function(){
-            $('#player-api').css('width', $('#customPlayerWidth').val() + 'px');
-            $('#player-api').css('height', $('#customPlayerHeight').val() + 'px');
+            $('#player-api, .video-stream.html5-main-video').css('width', $('#customPlayerWidth').val() + 'px');
+            $('#player-api, .video-stream.html5-main-video').css('height', $('#customPlayerHeight').val() + 'px');
             
             savedCustomSize = $('#customPlayerWidth').val() + ':' + $('#customPlayerHeight').val();
             localStorage.setItem('savedCustomSize', savedCustomSize);
@@ -436,7 +441,7 @@ if (location.href.match(/watch\?/) ){
         $('#videoReloader').click( function(){
             ytplayer = document.getElementById("movie_player");
             hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
-            minutes = Math.floor( (ytplayer.getCurrentTime() / 60) );
+            minutes = Math.floor( ( (ytplayer.getCurrentTime()-(hours*60*60)) / 60) );
             seconds = Math.floor( (ytplayer.getCurrentTime() % 60) );
             
             baseURL = "https://www.youtube.com/watch?v=";
