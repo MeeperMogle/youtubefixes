@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.7
+// @version     1.6.8
+// @changes     1.6.8: Had to push a graphical fix because of YouTube changing the layout. Experimenting with intelligent pause functionality.
 // @changes     1.6.7: Bug fixes related to the Watch-page, including resize of HTML5-videos.
 // @changes     1.6.6: Attempts to fix visual bug occurring for some.
 // @changes     1.6.5: Performance increased. Enhanced Watched-detection.
@@ -213,7 +214,13 @@ if(location.href.match(/feed\/subscriptions/)){
                         var imageLink;
                         var titleLink;
                         
+                        // Old layout
                         userLink = $(this).children('.feed-item-header').children('.feed-item-actions-line').children('.feed-item-owner').html();
+                        
+                        // New, icon-based layout
+                        userLink = "<a href='" + $(this).parent().children(".feed-author-bubble-container").children("a").attr("href") + "'>"
+                        + $(this).parent().children(".feed-author-bubble-container").children("a").children("span").children("span").children("span").children("span").children("img").attr("alt") + "</a>";
+                        
                         //timeAgo = $(this).children('.feed-item-header').children('.feed-item-time').html();
                         $(this).children('.feed-item-header').remove();
                         
@@ -295,23 +302,23 @@ if(location.href.match(/feed\/subscriptions/)){
                                 break;
                             }
                                 }
-                        
-                        if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
-                            //add basic X button
-                            $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
-                            
-                            var button = $('.hideButton', this);
-                            button.css('cursor', 'pointer'); //change cursor icon when hovering
-                            button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
-                            
-                            //make it clickable
-                            button.click(function(){
-                                hidden.push(id); //add ID to our array
-                                localStorage.setItem('video_hider', hidden.join(':')); //store it
-                                $(this).parent().hide(); //hide the video
-                            });
-                        }
                     }
+                
+                if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
+                    //add basic X button
+                    $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
+                    
+                    var button = $('.hideButton', this);
+                    button.css('cursor', 'pointer'); //change cursor icon when hovering
+                    button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
+                    
+                    //make it clickable
+                    button.click(function(){
+                        hidden.push(id); //add ID to our array
+                        localStorage.setItem('video_hider', hidden.join(':')); //store it
+                        $(this).parent().hide(); //hide the video
+                    });
+                }
             });
             
             if( !boxes.hideWatched )
@@ -358,11 +365,27 @@ if(location.href.match(/feed\/subscriptions/)){
 if (location.href.match(/watch\?/) ){
     window.scroll(55, 60);
     
+    var firstCheckDone = false;
+    
     ytplayer = document.getElementById("movie_player");
-    setTimeout(pauseVideo,2000);
+    
+    //setInterval(pauseVideo,500);
     
     function pauseVideo(){
-        ytplayer.pauseVideo(); // stop autoplay
+        if( ytplayer.getDuration()){
+            if(ytplayer.getPlayerState() > 0 && (ytplayer.getCurrentTime() < (ytplayer.getDuration()-1)) ){
+                
+                if(!firstCheckDone)
+                    ytplayer.pauseVideo(); // stop autoplay
+                
+                ytplayer.unMute();
+                firstCheckDone = true;
+            }
+            else{
+                ytplayer.mute();
+                firstCheckDone = false;
+            }
+        }
     }
     
     function spacebarToPause(){
@@ -372,12 +395,12 @@ if (location.href.match(/watch\?/) ){
                 ytplayer.blur();
                 
                 if( ytplayer.getPlayerState() == 1 )
-                	ytplayer.pauseVideo();
+                    ytplayer.pauseVideo();
                 else if( ytplayer.getPlayerState() == 2 )
                     ytplayer.playVideo();
                     
                     //alert(document.activeElement.tagName);
-            }
+                    }
             
             return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea" && document.activeElement.tagName.toLowerCase() != "input");
         });
@@ -389,14 +412,30 @@ if (location.href.match(/watch\?/) ){
     }
     doJQuery(lookOnReddit);
     
+    function checkAllStuff(){
+        $("#action-panel-details").prepend( "<button id=checkStuff>Check</button>" );
+        $('#checkStuff').click(function(){
+            ytplayer = document.getElementById("movie_player");
+            
+            var info = "";
+            info += "getCurrentTime(): " + ytplayer.getCurrentTime() + "\n";
+            info += "getPlayerState(): " + ytplayer.getPlayerState() + "\n";
+            info += "getDuration(): " + ytplayer.getDuration() + "\n";
+            alert( info );
+        });
+    }
+    doJQuery(checkAllStuff);
+    
     function addChangePlayerSizeControls(){
         var playerWidth;
         var playerHeight;
         var savedCustomSize = localStorage.getItem('savedCustomSize');
         
+        var fullVideoPlayerSelector = '#player-api, .video-stream.html5-main-video, video';
+        
         if( !savedCustomSize ){
-            playerWidth = $('#player-api, .video-stream.html5-main-video').css('width').replace('px','');
-            playerHeight = $('#player-api, .video-stream.html5-main-video').css('height').replace('px','');
+            playerWidth = $(fullVideoPlayerSelector).css('width').replace('px','');
+            playerHeight = $(fullVideoPlayerSelector).css('height').replace('px','');
             savedCustomSize = playerWidth + ':' + playerHeight;
             localStorage.setItem('savedCustomSize', savedCustomSize);
         }
@@ -409,23 +448,30 @@ if (location.href.match(/watch\?/) ){
         $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
         $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
         
-        $('#player-api, .video-stream.html5-main-video').css('width', $('#customPlayerWidth').val() + 'px');
-        $('#player-api, .video-stream.html5-main-video').css('height', $('#customPlayerHeight').val() + 'px');
+        $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+        $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+        
+        setTimeout(function(){
+            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+            $(fullVideoPlayerSelector).css('left', '0px');
+        }, 1000);
+        
         $('#customSizeSaveButton').hide();
         
         $('#customPlayerWidth').keyup(function(){
             if( $('#autoUpdateSize').is(':checked') )
-                $('#player-api, .video-stream.html5-main-video').css('width', $(this).val() + 'px');
+                $(fullVideoPlayerSelector).css('width', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customPlayerHeight').keyup(function(){
             if( $('#autoUpdateSize').is(':checked') )
-                $('#player-api, .video-stream.html5-main-video').css('height', $(this).val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $(this).val() + 'px');
             $('#customSizeSaveButton').show();
         });
         $('#customSizeSaveButton').click(function(){
-            $('#player-api, .video-stream.html5-main-video').css('width', $('#customPlayerWidth').val() + 'px');
-            $('#player-api, .video-stream.html5-main-video').css('height', $('#customPlayerHeight').val() + 'px');
+            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
             
             savedCustomSize = $('#customPlayerWidth').val() + ':' + $('#customPlayerHeight').val();
             localStorage.setItem('savedCustomSize', savedCustomSize);
@@ -481,8 +527,8 @@ if (location.href.match(/watch\?/) ){
     }
     
     doJQuery(setUpReloadButton);
-    doJQuery(addChangePlayerSizeControls);
     doJQuery(watchedVideo);
+    doJQuery(addChangePlayerSizeControls);
 }
 // ----------------------------------------------------------------------------------------------------
 
