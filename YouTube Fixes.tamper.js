@@ -2,7 +2,10 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.6.8
+// @version     1.7.1.1
+// @changes     1.7.1.1: Subscriptions-video structure was changed by YouTube. Quick-fix for compatibility.
+// @changes     1.7.1: Changed Codepart 4: Playlist to calculate total Playtime since Total Views are no longer possible.
+// @changes     1.7: (Beta) Show/hide Filter-box, improved Video Resizer + ESC to re-resize, widescreen Subscriptions-page, anti-videoad mute functionality (Beta).
 // @changes     1.6.8: Had to push a graphical fix because of YouTube changing the layout. Experimenting with intelligent pause functionality.
 // @changes     1.6.7: Bug fixes related to the Watch-page, including resize of HTML5-videos.
 // @changes     1.6.6: Attempts to fix visual bug occurring for some.
@@ -22,7 +25,7 @@
 // Codepart 1: Global stuff - Adds link to the Inbox to the header again, redirects to HTTPS...
 // Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
 // Codepart 3: The Watch-page - Adds functionality for Watched-functionality, customize player size...
-// Codepart 4: Playlist - Adds counter to the Playlist-pages that show the total number of views for all the videos in the playlist.
+// Codepart 4: Playlist - Adds counter to the Playlist-pages that show the total time for all the videos in the playlist.
 
 
 
@@ -41,10 +44,179 @@ function doJQuery(callback) {
 
 // ----------------------------------------------------------------------------------------------------
 // Codepart 1: Global stuff - Adds link to the Inbox to the header again, redirects to HTTPS...
-function fixInbox(){
+ctrlDown = false;
+shiftDown = false;
+
+function fixGlobal(){
     $('#masthead-expanded-menu-list').append('<li class="masthead-expanded-menu-item"><a href="/inbox" class="yt-uix-sessionlink" data-sessionlink="' + $('a.yt-uix-sessionlink').attr("data-sessionlink") + '">Inbox</a></li>');
+    
+    document.onkeyup = function(event){
+        // CTRL
+        if(event.which == 17){
+            ctrlDown = false;
+        }
+        // Shift
+        else if(event.which == 16){
+            shiftDown = false;
+        }
+            };
+    document.onkeydown = function(event){
+        // CTRL
+        if(event.which == 17){
+            ctrlDown = true;
+        }
+        // Shift
+        else if(event.which == 16){
+            shiftDown = true;
+        }
+            };
+    
+    $("a[href*='watch?'], a[href*='feed'], a[href*='channel'], a[href*='subscription'], a[href*='playlist']").click(function(event){
+        if( event.which == 1 ){
+            var newURL = $(this).attr("href");
+            
+            if(ctrlDown || shiftDown){
+                
+            }
+            else{
+                top.location=newURL;
+                window.location.href = newURL;
+                self.location=newURL;
+                window.navigate(newURL);
+                return false;
+            }
+        }
+    });
+    
+    setTimeout(function(){
+        if(autoChooseAccount && location.href.match(/action_prompt_identity=true/)){
+            
+            $('.specialized-identity-prompt-account-item').each(function(){
+                if($(this).html().indexOf(preferredAccount) > -1){
+                    $(this).click();
+                }
+            });
+            
+            $('.yt-uix-form-input-radio').each(function(){
+                if($(this).parent().parent().html().indexOf() > -1){
+                    $(this).attr('checked', 'checked');
+                }
+            });
+            $('#identity-prompt-confirm-button').click();
+        }
+        else if(autoChooseAccount && top.location.match(/youtube/) && $('#masthead-expanded-menu-account-info').children().eq(0).html() != preferredAccount){
+            top.location = 'https://www.youtube.com/signin?next=%2F&action_prompt_identity=true&app=desktop';
+        }
+            },750);
+    
+    
+    var settingsButton = "<span style='margin-right:5px;margin-top:2px;'><input type=button id=ytfixesSettingsButton value='YouTube Fixes'></span>";
+    $('#yt-masthead-user').prepend(settingsButton);
+    
+    var settingsHeader = "YouTube Fixes Settings (UNDER DEVELOPMENT)";
+    var settingsContent = "<table style=''>";
+    settingsContent+= "<tr><td class=ytfixesTD>Annotations</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>VideoAD mute</td><td class=ytfixesTD><input type=checkbox id=ytfixesVideoADmute></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>VideoAD autopause*+</td><td class=ytfixesTD><input type=checkbox id=ytfixesVideoADmute></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>Autopause</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    //settingsContent+= "<tr><td class=ytfixesTD>Captions</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>Quality**</td><td class=ytfixesTD>\<select id=ytfixesQuality>\
+<option value='1080'>1080p (HD)</option>\
+<option value='720'>720p (HD)</option>\
+<option value='480'>480p</option>\
+<option value='360'>360p</option>\
+<option value='240'>240p</option>\
+<option value='144'>144p</option>\
+</select> <input type=checkbox id=ytfixesActivateQuality checked></td></tr>";
+    // hd1080,hd720,large (480), medium (360), small (240), tiny (144)
+    // getAvailableQualityLevels()
+    // setPlaybackQuality(String)
+    
+    settingsContent+= "<tr><td class=ytfixesTD>Speed</td><td class=ytfixesTD>\<select id=ytfixesSpeed>\
+<option value='0.25'>25%</option>\
+<option value='.50'>50%</option>\
+<option value='1' selected>100%</option>\
+<option value='1.5'>150%</option>\
+<option value='2'>200%</option>\
+</select> <input type=checkbox id=ytfixesActivateSpeed checked></td></tr>"; // 0.25, 0.5, 1, 1.5, and 2.     setPlaybackRate(Number)      getAvailablePlaybackRates()
+    settingsContent+= "<tr><td class=ytfixesTD>Volume**</td><td class=ytfixesTD><input type='number' min='0' max='100' value=100 id=ytfixesVolume> <input type=checkbox id=ytfixesActivateVolume checked></td></tr>"; // 0 - 100                    setVolume(Number)
+    //settingsContent+= "<tr><td class=ytfixesTD>----------</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    settingsContent+= "</table>";
+    
+    settingsContent+= "<br><br>* Beta\
+<br>** <i>Forces</i> the closest (available) value\
+<br>+ Pause the video when the ad is done, so you don't miss anything!";
+
+    settingsContent+= "<br><br><b>Links</b>\
+<br><a href=https://www.youtube.com/subscription_manager>Subscriptions</a>";    
+    
+    settingsContent+= "<br><br>Developer <input type=checkbox id=ytfixDevTestKitBox><br><div id=ytfixDevTestKit>\
+<textarea id=checkStuffText cols=50></textarea> <button id=checkStuff>Execute</button></div>";
+    
+    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 10px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
+    $('#ytfixesSettings').hide();
+    
+    $('#ytfixesSettings').append("<center><h1>" + settingsHeader + "</h1></center>_______________________________________________<br><br>" + settingsContent);
+    
+    $('.ytfixesTD').css('padding','5px');
+    
+    $("#ytfixesSettingsButton").click(function(){
+        if($('#ytfixesSettings').css("display") != "block")
+            $('#ytfixesSettings').show();
+        else
+            $('#ytfixesSettings').hide();
+    });
+    
+    $("#ytfixesSettingsButton").hide();
+    
+    
+    // Quality
+    $('#ytfixesActivateQuality').click(function(){
+        if($(this).is(':checked')){
+            $('#ytfixesQuality').attr("disabled",false);
+        }
+        else{
+            $('#ytfixesQuality').attr("disabled",true);
+        }
+    });
+    
+    // Speed
+    $('#ytfixesActivateSpeed').click(function(){
+        if($(this).is(':checked')){
+            $('#ytfixesSpeed').attr("disabled",false);
+        }
+        else{
+            $('#ytfixesSpeed').attr("disabled",true);
+        }
+    });
+    
+    // Volume
+    $('#ytfixesActivateVolume').click(function(){
+        if($(this).is(':checked')){
+            $('#ytfixesVolume').attr("disabled",false);
+        }
+        else{
+            $('#ytfixesVolume').attr("disabled",true);
+        }
+    });
+    
+    // Developer
+    $('#checkStuff').click(function(){
+        eval( $('#checkStuffText').val() );
+    });
+    
+    $('#ytfixDevTestKit').hide();
+    
+    $('#ytfixDevTestKitBox').click(function(){
+        if($(this).is(':checked')){
+            $('#ytfixDevTestKit').show();
+        }
+        else{
+            $('#ytfixDevTestKit').hide();
+        }
+    });
 }
-doJQuery(fixInbox);
+doJQuery(fixGlobal);
 
 // Redirects you from HTTP to HTTPS
 if (location.href.match(/http:/) ){
@@ -65,11 +237,16 @@ if (location.href.match(/redirect\?q=/) ){
     
     doJQuery(redirectThrough);
 }
+
+
+
+
+
 // ----------------------------------------------------------------------------------------------------
 
 
 // Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
-if(location.href.match(/feed\/subscriptions/)){
+if(location.href.match(/feed\/(subscriptions|.*)/)){
     function initialStuff(){
         // Checkbox-settings
         var boxes = localStorage.getItem('boxes_hider'); //get list of hidden videos
@@ -82,28 +259,91 @@ if(location.href.match(/feed\/subscriptions/)){
             boxes = JSON.parse(boxes); //make our string-item into an array
         }
         
+        if( $('#appbar-guide-menu').css('visibility') != 'visible'){
+            $('#appbar-guide-menu, #appbar-guide-iframe-mask').css('display', 'none');
+        }
+        $('#appbar-guide-button').click(function(){
+            if( $('#appbar-guide-menu').css('visibility') == 'visible'){
+                $('#appbar-guide-menu, #appbar-guide-iframe-mask').css('display', 'none');
+            }
+            else{
+                $('#appbar-guide-menu, #appbar-guide-iframe-mask').css('display', '');
+            }
+        });
+        
+        // Option to hide Recommended Channels
+        $('#feed').parent().css("width","100%");
+        $('#content').css("width","98.5%").css('margin-left','0px');
+        
+        
+        
+        var hideRecommended = localStorage.getItem('hide_recommended_hider'); //get list of hidden videos
+        if(!hideRecommended){
+            //if not found, make it into an empty array
+            hideRecommended = "false";
+            localStorage.setItem('hide_recommended_hider', hideRecommended);
+        }
+        
+        var recommendedChannelsArea = $('.branded-page-v2-secondary-col').children().eq(0);
+        recommendedChannelsArea.hide();
+        recommendedChannelsArea.show();
+        
+        $('.branded-page-v2-secondary-col').prepend("<button style='margin:5px 0 -15px 10px; border: 1px solid grey; background-color: grey; cursor:pointer;' id=toggleRecommended>&gt;</button>");
+        $('#toggleRecommended').click(function(){
+            if(recommendedChannelsArea.css("display") == "block"){
+                recommendedChannelsArea.hide();
+                recommendedChannelsArea.parent().css("width", "1px").css("margin-left", "-30px");
+                $(this).html( "&lt;" );
+                localStorage.setItem('hide_recommended_hider', "true");
+            }
+            else{
+                recommendedChannelsArea.show();
+                recommendedChannelsArea.parent().css("width", "173px");
+                $(this).html( "&gt;" );
+                localStorage.setItem('hide_recommended_hider', "false");
+            }
+        });
+        if( hideRecommended == "true" ){
+            $('#toggleRecommended').html( "&lt;" );
+            recommendedChannelsArea.hide();
+            recommendedChannelsArea.parent().css("width", "1px").css("margin-left", "-30px");
+        }
+        
+        
+        
         $('.feed-item-main').css('margin','0');
         
         $('div.yt-lockup-description').remove();
         $('div.feed-header').remove();
         
-        $('#page').css('width','90%');
-        $('#content').css('width','80%');
         
-        $('.feed-load-more-container').eq(0).html( $('.feed-load-more-container').eq(0).html()  + '<input type=submit value="LOAD ALL" id=loadALL>');
+        // Load all-button
+        // Loads pages as far as possible, one at a time but without you having to keep clicking.
+        //$('.feed-load-more-container').eq(0).html( $('.feed-load-more-container').eq(0).html()  + '<input type=submit value="LOAD ALL" id=loadALL>');
+        $('#browse-items-primary').prepend('<center><input type=submit style="" value="LOAD ALL" id=loadALL></center>');
+        
+        
+        
         $('#loadALL').click(function(){
             var r=confirm("Warning: Loading all videos will make the page run slow until it's done.\nPress OK to load, Cancel to abort.")
             if (r==true){
                 var continues = true;
                 setInterval(function(){
                     if(continues){
-                        $('.feed-load-more').eq(0).attr('id','loadsMore');
-                        document.getElementById('loadsMore').click();
+                        $('.load-more-button.yt-uix-load-more').eq(0).attr('id','loadsMore');
                         
-                        if( $('.feed-load-more-container').attr('style') == 'display: none;' )
+                        if( $('.load-more-button.yt-uix-load-more').attr('class').indexOf('error') > -1 || $('.load-more-button.yt-uix-load-more').attr('style') == 'display: none;' ){
                             continues = false;
+                            $('#loadALL,#loadsMore').hide();
+                        }
+                        else{
+                            document.getElementById('loadsMore').click();
+                        }
                     }
                 }, 2000);
+                
+                $('#loadALL').attr('disabled','disabled');
+                $('#loadALL').attr('value','Loading all videos...');
             }
         });
         
@@ -140,17 +380,52 @@ if(location.href.match(/feed\/subscriptions/)){
         var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched>';
         var useRegexBox = 'RegEx in filters (<a href="" id=whatIsRegex>?</a>) <input type=checkbox id=useRegex>';
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
-        var seriesController = "<h2>Videos to filter</h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton>";
-        $('#guide-subscriptions-section').eq(0).html( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController + $('#guide-subscriptions-section').html() );
+        var seriesController = "<h2><span id=seriesControlTextareaHider style='color:grey;cursor:pointer;'></span></h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton style='margin-bottom:15px;'><hr color=black>";
+        $('#behavior-id-guide-playlists-section').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController );
         
-        $('#seriesControlTextarea').css('display','block');
-        $('#seriesControlTextarea').css('width','100%');
+        $('#seriesControlTextarea').hide();
+        $('#seriesControlTextarea').show();
+        
+        
+        
+        $('#seriesControlTextarea').css('width','110%');
         $('#seriesControlTextarea').css('height','150px');
         $('#seriesControlTextarea').css('padding','0');
-        $('#seriesControlTextarea').css('border','1px solid #000');
-        $('#seriesControlTextarea').css('margin','0 auto');
-        $('#seriesControlTextarea').css('margin-left','-40px');
+        $('#seriesControlTextarea').css('margin-left','-20px');
         $('#seriesControlTextarea').css('overflow','auto');
+        
+        var hideFilterbox = localStorage.getItem('hide_filterbox_hider'); //get list of hidden videos
+        if(!hideFilterbox){
+            //if not found, make it into an empty array
+            hideFilterbox = "false";
+            localStorage.setItem('hide_filterbox_hider', hideFilterbox);
+        }
+        
+        if(hideFilterbox == "true"){
+            $('#seriesControlTextarea, #seriesControlFilterButton').hide();
+            $('#seriesControlTextareaHider').html("Videos to filter v");
+        }
+        else{
+            $('#seriesControlTextareaHider').html("Videos to filter ^");
+        }
+        
+        
+        $('#seriesControlTextareaHider').click(function(){
+            if($('#seriesControlTextarea').css("display") == "inline-block"){
+                // hide
+                $('#seriesControlTextarea, #seriesControlFilterButton').hide();
+                $('#seriesControlTextareaHider').html("Videos to filter v");
+                localStorage.setItem('hide_filterbox_hider', "true");
+            }
+            else{
+                // show
+                $('#seriesControlTextarea, #seriesControlFilterButton').show();
+                $('#seriesControlTextareaHider').html("Videos to filter ^");
+                localStorage.setItem('hide_filterbox_hider', "false");
+            }
+        });
+        
+        
         
         $('#whatIsRegex').click(function(){
             window.open("http://www.w3schools.com/jsref/jsref_obj_regexp.asp", '_blank');
@@ -166,10 +441,8 @@ if(location.href.match(/feed\/subscriptions/)){
         //make our unhide-button clickable
         $('#clear_hidden_list').click(function(){
             localStorage.setItem('video_hider', "");
-            //$(this).after('Done. Refresh page to see all videos.');
             hidden = [];
             hideTheRightStuff();
-            //$(this).hide();
         });
         
         for(i=0; i<hiddenSeries.length; i++){
@@ -191,6 +464,7 @@ if(location.href.match(/feed\/subscriptions/)){
             hideTheRightStuff()
         });
         
+        $('#gh-activityfeed').prepend("<table border=0 id=fixesTable><tr id=videoTR></tr></table>");
         
         // Base function supplied by http://stackoverflow.com/users/331508/brock-adams
         function waitForKeyElements (selectorTxt,actionFunction,bWaitOnce,iframeSelector){
@@ -221,16 +495,18 @@ if(location.href.match(/feed\/subscriptions/)){
                         userLink = "<a href='" + $(this).parent().children(".feed-author-bubble-container").children("a").attr("href") + "'>"
                         + $(this).parent().children(".feed-author-bubble-container").children("a").children("span").children("span").children("span").children("span").children("img").attr("alt") + "</a>";
                         
-                        //timeAgo = $(this).children('.feed-item-header').children('.feed-item-time').html();
+                        // Even newer layout - what the fudge, beef?
+                        userLink = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('.yt-lockup-meta-info').children('li').eq(0).html();
+                        
                         $(this).children('.feed-item-header').remove();
                         
-                        imageLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-thumbnail').html();
-                        titleLink = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-title').html();
-                        timeAgo = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
-                        views = $(this).children('.feed-item-main-content').children('.yt-lockup').children('.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
+                        imageLink = $(this).children('div.yt-lockup-thumbnail').html();
+                        titleLink = $(this).children('div.yt-lockup-content').children('.yt-lockup-title').html();
+                        timeAgo = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
+                        views = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(2).html();
                         
-                        $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>" + timeAgo + " by " + userLink + "<br>" + views + "</td>" );
-                        $(this).parent().parent().remove();
+                        $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
+                        $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
                         
                         hideTheRightStuff();
                         
@@ -266,21 +542,46 @@ if(location.href.match(/feed\/subscriptions/)){
             
         }
         
-        waitForKeyElements ("div.feed-item-main", testIt);
+        waitForKeyElements ("div.yt-lockup.yt-lockup-video", testIt);
         
         function hideTheRightStuff(){
+            if( !boxes.hideWatched )
+                $('.customWatched').show();
+            
             $('#videoTR td').each(function(){
                 var id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
+                
+                $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
                 
                 if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
                     //remove the video if it's in our array of stuff to hide
                     $(this).hide();
                 } // 
-                else if( ($('#hideWatched').prop('checked') && $(this).html().indexOf('watched-badge') > -1) || ($('#hideWatched').prop('checked') && ($.inArray(id, watchedVideos) != -1) || $(this).html().indexOf('watched-message') > -1 ) ){
+                else if(  $(this).html().indexOf('watched-badge') > -1 || $.inArray(id, watchedVideos) != -1 || $(this).html().indexOf('watched-message') > -1  ){
                     // Watched looks
                     $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
                     $(this).addClass('customWatched');
-                    $(this).hide();
+                    
+                    if($('#hideWatched').prop('checked'))
+                        $(this).hide();
+                    else{
+                        var title = $(this).children('a').eq(1).html();
+                        
+                        for(var i=0; i<hiddenSeries.length; i++){
+                            if( boxes.useRegex ){
+                                var regex = new RegExp(hiddenSeries[i], "gim");
+                                
+                                if( title.match(regex) ){
+                                    $(this).hide();
+                                    break;
+                                }
+                            }
+                            else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                                $(this).hide();
+                                break;
+                            }
+                                }
+                    }
                 }
                     else{
                         $(this).show();
@@ -319,10 +620,25 @@ if(location.href.match(/feed\/subscriptions/)){
                         $(this).parent().hide(); //hide the video
                     });
                 }
+                
             });
             
-            if( !boxes.hideWatched )
-                $('.customWatched').show();
+            $("a[href*='watch?'], a[href*='feed'], a[href*='channel'], a[href*='subscription'], a[href*='playlist']").click(function(event){
+                if( event.which == 1 ){
+                    var newURL = $(this).attr("href");
+                    
+                    if(ctrlDown || shiftDown){
+                        
+                    }
+                    else{
+                        top.location=newURL;
+                        window.location.href = newURL;
+                        self.location=newURL;
+                        window.navigate(newURL);
+                        return false;
+                    }
+                }
+            });
         }
         
         $('#hideWatched').mousedown(function() {
@@ -363,30 +679,45 @@ if(location.href.match(/feed\/subscriptions/)){
 
 // Codepart 3: The Watch-page. Adds functionality for Watched-functionality, customize player size...
 if (location.href.match(/watch\?/) ){
-    window.scroll(55, 60);
+    window.scroll(0, 0);
     
-    var firstCheckDone = false;
+    fullVideoPlayerSelector = '#player-api, .video-stream, .html5-main-video, video, .html5-video-content, #player';
+    var lastAdOnTime = -1;
+    
+    var firstAdDone = false;
+    var firstAdMuted = false;
+    var lastAdMuted = false;
+    var lastCheckTime = -1;
+    var currentlyAd = false;
+    var middleAdDone = false;
+    
+    var firstCheckDone = 0;
+    
+    var tempMeep = true;
     
     ytplayer = document.getElementById("movie_player");
     
-    //setInterval(pauseVideo,500);
-    
-    function pauseVideo(){
-        if( ytplayer.getDuration()){
-            if(ytplayer.getPlayerState() > 0 && (ytplayer.getCurrentTime() < (ytplayer.getDuration()-1)) ){
-                
-                if(!firstCheckDone)
-                    ytplayer.pauseVideo(); // stop autoplay
-                
-                ytplayer.unMute();
-                firstCheckDone = true;
-            }
-            else{
-                ytplayer.mute();
-                firstCheckDone = false;
-            }
-        }
+    // Disable Captions
+    function ytfixesDoSettings(){
+        // Extra checks will go here once it gets optional
+        $('div[tabindex="2400"]').eq(1).click();
     }
+    //doJQuery(ytfixesDoSettings);
+    
+    lastState = "";
+    doneInitial = 0;
+    // 
+    ytplayer.addEventListener('onStateChange', function(){
+        if(doneInitial < 3){
+            setTimeout(ytfixesDoSettings,1500);
+            doneInitial++;
+        }
+        
+        
+        
+        
+        lastState = ytplayer.getPlayerState();
+    });
     
     function spacebarToPause(){
         $(document).keydown(function(evt) {
@@ -399,7 +730,6 @@ if (location.href.match(/watch\?/) ){
                 else if( ytplayer.getPlayerState() == 2 )
                     ytplayer.playVideo();
                     
-                    //alert(document.activeElement.tagName);
                     }
             
             return !(evt.keyCode == 32 && document.activeElement.tagName.toLowerCase() != "textarea" && document.activeElement.tagName.toLowerCase() != "input");
@@ -412,26 +742,10 @@ if (location.href.match(/watch\?/) ){
     }
     doJQuery(lookOnReddit);
     
-    function checkAllStuff(){
-        $("#action-panel-details").prepend( "<button id=checkStuff>Check</button>" );
-        $('#checkStuff').click(function(){
-            ytplayer = document.getElementById("movie_player");
-            
-            var info = "";
-            info += "getCurrentTime(): " + ytplayer.getCurrentTime() + "\n";
-            info += "getPlayerState(): " + ytplayer.getPlayerState() + "\n";
-            info += "getDuration(): " + ytplayer.getDuration() + "\n";
-            alert( info );
-        });
-    }
-    doJQuery(checkAllStuff);
-    
     function addChangePlayerSizeControls(){
         var playerWidth;
         var playerHeight;
         var savedCustomSize = localStorage.getItem('savedCustomSize');
-        
-        var fullVideoPlayerSelector = '#player-api, .video-stream.html5-main-video, video';
         
         if( !savedCustomSize ){
             playerWidth = $(fullVideoPlayerSelector).css('width').replace('px','');
@@ -444,34 +758,64 @@ if (location.href.match(/watch\?/) ){
             playerHeight = savedCustomSize.split(':')[1];
         }
         
-        $('#eow-title').parent().parent().append( '<input type=checkbox id=autoUpdateSize> ' );
+        
+        
+        $('#eow-title').parent().parent().append( 'Resize video! Auto? <input type=checkbox id=autoUpdateSize> ' );
         $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
         $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
+        $('#customSizeSaveButton').hide();
         
-        $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-        $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+        
+        setTimeout(function(){
+            if($('.ytp-size-toggle-large').html() != undefined){
+                $('#watch7-sidebar').css('margin-top','0');
+                $('#player-api').css('float', 'none').css('margin', '0 auto');
+                $('#player').attr('class', 'watch-playlist-collapsed watch-medium');
+                $('.watch-small').css('max-width','')
+            }
+            
+            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+            $(fullVideoPlayerSelector).css('left', '0px');
+            $('video').css("width","100%").css("height","100%");
+        }, 1500);
         
         setTimeout(function(){
             $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
             $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
             $(fullVideoPlayerSelector).css('left', '0px');
-        }, 1000);
+            $('video').css("width","100%").css("height","100%");
+        }, 2500);
         
-        $('#customSizeSaveButton').hide();
+        setTimeout(function(){
+            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+            $(fullVideoPlayerSelector).css('left', '0px');
+            $('video').css("width","100%").css("height","100%");
+        }, 3500);
         
         $('#customPlayerWidth').keyup(function(){
-            if( $('#autoUpdateSize').is(':checked') )
-                $(fullVideoPlayerSelector).css('width', $(this).val() + 'px');
+            if( $('#autoUpdateSize').is(':checked') ){
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
+            }
             $('#customSizeSaveButton').show();
         });
         $('#customPlayerHeight').keyup(function(){
-            if( $('#autoUpdateSize').is(':checked') )
-                $(fullVideoPlayerSelector).css('height', $(this).val() + 'px');
+            if( $('#autoUpdateSize').is(':checked') ){
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
+            }
             $('#customSizeSaveButton').show();
         });
         $('#customSizeSaveButton').click(function(){
             $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
             $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+            $('video').css("width","100%").css("height","100%");
             
             savedCustomSize = $('#customPlayerWidth').val() + ':' + $('#customPlayerHeight').val();
             localStorage.setItem('savedCustomSize', savedCustomSize);
@@ -479,6 +823,63 @@ if (location.href.match(/watch\?/) ){
             $(this).hide();
         });
     }
+    
+    var adMention;
+    firstPause = 0;
+    function myPauseVideo(){
+        if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
+            
+            $('.ad-container').children('iframe').attr('name', 'adIframen');
+            
+            
+            
+            if(document.adIframen != undefined)
+                adMention = document.adIframen.document.childNodes[0].innerHTML.lastIndexOf('Advertisement:');
+            else if($('.videoAdUiAttribution') != undefined){
+                try
+                {
+                    adMention = $('.videoAdUiAttribution').html().lastIndexOf('Advertisement:');
+                }
+                catch(err){
+                    // lastIndexOf throws exception once the ad is no longer there, make sure that doesn't make it all crash.
+                }
+            }
+                else{
+                }
+            
+            if(adMention != undefined && adMention > -1){
+                if(lastAdOnTime != ytplayer.getCurrentTime()){
+                    ytplayer.mute();
+                }
+                else{
+                }
+                lastAdOnTime = ytplayer.getCurrentTime();
+                adMention = -1;
+            }
+            else if(lastAdOnTime != -1){
+                lastAdOnTime = -1;
+                ytplayer.pauseVideo();
+                ytplayer.unMute();
+                ytfixesDoSettings();
+                
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
+            }
+                else if(firstPause < 4){
+                    firstPause++;
+                    if(ytplayer.getPlayerState() != 2){
+                        ytplayer.pauseVideo();
+                        ytplayer.unMute();
+                    }
+                }
+                }
+        $('body').css('overflow','auto');
+        //setTimeout(myPauseVideo,600);
+    }
+    setInterval(myPauseVideo,500);
+    //setTimeout(myPauseVideo,1500);
     
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
@@ -526,37 +927,92 @@ if (location.href.match(/watch\?/) ){
         }   
     }
     
+    // Fullscreen stuff testing
+    function fullscreenShalntScrewWithSize(){
+        $('.ytp-button-fullscreen-enter').click(function(){
+            setTimeout(function(){
+                $('video').css("width","100%").css("height","100%");
+                
+                $('*').keydown( function(event){
+                    if(event.which == 27){
+                        setTimeout(function(){
+                            $('video').css("width","100%").css("height","100%");
+                        },750);
+                    }
+                });
+            },750);
+        });
+        
+        $('video').dblclick(function(){
+            setTimeout(function(){
+                $('video').css("width","100%").css("height","100%");
+                
+                $('*').keydown( function(event){
+                    if(event.which == 27){
+                        setTimeout(function(){
+                            $('video').css("width","100%").css("height","100%");
+                        },750);
+                    }
+                });
+            },750);
+        });
+        
+        $('*').keydown( function(event){
+            if(event.which == 27){
+                setTimeout(function(){
+                    $('video').css("width","100%").css("height","100%");
+                },750);
+            }
+        });
+    }
+    
+    
     doJQuery(setUpReloadButton);
     doJQuery(watchedVideo);
     doJQuery(addChangePlayerSizeControls);
+    doJQuery(fullscreenShalntScrewWithSize);
 }
 // ----------------------------------------------------------------------------------------------------
 
-// Codepart 4: Playlist. Adds counter to the Playlist-pages that show the total number of views for all the videos in the playlist.
+// Codepart 4: Playlist. Adds counter to the Playlist-pages that show the total time for all the videos in the playlist.
 if (location.href.match(/playlist\?/) ){
     
     function viewCountOnPlaylist(){
         var total = 0;
-        $('.header-stats:contains("video")').html($('.header-stats:contains("video")').html() + '<li><span class="stat-value" id=videoviews></span><span class="stat-name"> Video views</span></li></ul>');
-        $('span.video-view-count').each(
-            function(){
-                total += parseInt($(this).html().replace(" ", "", 'g').replace("views","").replace(",","",'g').replace("No","0"));
-            }
-        );
-        $('#videoviews').html(addCommas(total));
         
-        function addCommas(nStr)
-        {
-            nStr += '';
-            x = nStr.split('.');
-            x1 = x[0];
-            x2 = x.length > 1 ? '.' + x[1] : '';
-            var rgx = /(\d+)(\d{3})/;
-            while (rgx.test(x1)) {
-                x1 = x1.replace(rgx, '$1' + ',' + '$2');
+        var hours = 0;
+        var minutes = 0;
+        var seconds = 0;
+        
+        $('div.timestamp').each(function(){
+            var time = $(this).html();
+            var separators = time.match(/:/g).length;
+            
+            if(separators == 0){
+                seconds += parseInt(time)
+            } else if(separators == 1){
+                minutes += parseInt(time.split(":")[0]);
+                seconds += parseInt(time.split(":")[1]);
+            } else if(separators == 2){
+                hours += parseInt(time.split(":")[0]);
+                minutes += parseInt(time.split(":")[1]);
+                seconds += parseInt(time.split(":")[2]);
+            } else{
+                
             }
-            return x1 + x2;
+        });
+        
+        while(seconds >= 60){
+            seconds -= 60;
+            minutes++;
         }
+        while(minutes >= 60){
+            minutes -= 60;
+            hours++;
+        }
+        
+        $('.pl-header-details').eq(0).append("<li>Total time " + hours + ":" + minutes + ":" + seconds + "</li>");
+        
     }
     
     doJQuery(viewCountOnPlaylist);
