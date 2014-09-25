@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.1
+// @version     1.7.1.2
+// @changes     1.5.1.2: Subscriptions-video structure was changed by YouTube - again. Quick-fix for compatibility.
 // @changes     1.7.1.1: Subscriptions-video structure was changed by YouTube. Quick-fix for compatibility.
 // @changes     1.7.1: Changed Codepart 4: Playlist to calculate total Playtime since Total Views are no longer possible.
 // @changes     1.7: (Beta) Show/hide Filter-box, improved Video Resizer + ESC to re-resize, widescreen Subscriptions-page, anti-videoad mute functionality (Beta).
@@ -153,7 +154,7 @@ function fixGlobal(){
     settingsContent+= "<br><br>Developer <input type=checkbox id=ytfixDevTestKitBox><br><div id=ytfixDevTestKit>\
 <textarea id=checkStuffText cols=50></textarea> <button id=checkStuff>Execute</button></div>";
     
-    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 10px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
+    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 -40px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
     $('#ytfixesSettings').hide();
     
     $('#ytfixesSettings').append("<center><h1>" + settingsHeader + "</h1></center>_______________________________________________<br><br>" + settingsContent);
@@ -167,7 +168,7 @@ function fixGlobal(){
             $('#ytfixesSettings').hide();
     });
     
-    $("#ytfixesSettingsButton").hide();
+    //$("#ytfixesSettingsButton").hide();
     
     
     // Quality
@@ -316,7 +317,6 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         $('div.yt-lockup-description').remove();
         $('div.feed-header').remove();
         
-        
         // Load all-button
         // Loads pages as far as possible, one at a time but without you having to keep clicking.
         //$('.feed-load-more-container').eq(0).html( $('.feed-load-more-container').eq(0).html()  + '<input type=submit value="LOAD ALL" id=loadALL>');
@@ -328,13 +328,14 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
             var r=confirm("Warning: Loading all videos will make the page run slow until it's done.\nPress OK to load, Cancel to abort.")
             if (r==true){
                 var continues = true;
-                setInterval(function(){
+                checkInterval = setInterval(function(){
                     if(continues){
                         $('.load-more-button.yt-uix-load-more').eq(0).attr('id','loadsMore');
                         
-                        if( $('.load-more-button.yt-uix-load-more').attr('class').indexOf('error') > -1 || $('.load-more-button.yt-uix-load-more').attr('style') == 'display: none;' ){
+                        if( ($('.load-more-button').html() == undefined || $('.load-more-button').html() == "undefined") && $('#loadALL').parent().parent().parent().children().length == 2){
                             continues = false;
                             $('#loadALL,#loadsMore').hide();
+                            clearInterval(checkInterval);
                         }
                         else{
                             document.getElementById('loadsMore').click();
@@ -496,14 +497,17 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         + $(this).parent().children(".feed-author-bubble-container").children("a").children("span").children("span").children("span").children("span").children("img").attr("alt") + "</a>";
                         
                         // Even newer layout - what the fudge, beef?
-                        userLink = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('.yt-lockup-meta-info').children('li').eq(0).html();
+                        userLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('.yt-lockup-meta-info').children('li').eq(0).html();
+                        
+                        // They keep adding stuff...
+                        
                         
                         $(this).children('.feed-item-header').remove();
                         
-                        imageLink = $(this).children('div.yt-lockup-thumbnail').html();
-                        titleLink = $(this).children('div.yt-lockup-content').children('.yt-lockup-title').html();
-                        timeAgo = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
-                        views = $(this).children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(2).html();
+                        imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
+                        titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
+                        timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
+                        views = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(2).html();
                         
                         $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
                         $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
@@ -743,6 +747,8 @@ if (location.href.match(/watch\?/) ){
     doJQuery(lookOnReddit);
     
     function addChangePlayerSizeControls(){
+        $('#theater-background').remove();
+        
         var playerWidth;
         var playerHeight;
         var savedCustomSize = localStorage.getItem('savedCustomSize');
@@ -884,7 +890,7 @@ if (location.href.match(/watch\?/) ){
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
     function setUpReloadButton(){
-        $('#eow-title').parent().parent().append( "<input type=submit value='Reload video' id=videoReloader>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" );
+        $('#eow-title').parent().parent().append( "<input type=submit value='Reload video' style='margin-bottom:5px;' id=videoReloader>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" );
         $('#videoReloader').click( function(){
             ytplayer = document.getElementById("movie_player");
             hours = Math.floor( (ytplayer.getCurrentTime() / (60*60)) );
