@@ -2,8 +2,9 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.2
-// @changes     1.5.1.2: Subscriptions-video structure was changed by YouTube - again. Quick-fix for compatibility.
+// @version     1.7.1.3
+// @changes     1.7.1.3: Video Ad-recognision structure was changed by YouTunbe - for the better! Quick-fix for Mute-compatibility.
+// @changes     1.7.1.2: Subscriptions-video structure was changed by YouTube - again. Quick-fix for compatibility.
 // @changes     1.7.1.1: Subscriptions-video structure was changed by YouTube. Quick-fix for compatibility.
 // @changes     1.7.1: Changed Codepart 4: Playlist to calculate total Playtime since Total Views are no longer possible.
 // @changes     1.7: (Beta) Show/hide Filter-box, improved Video Resizer + ESC to re-resize, widescreen Subscriptions-page, anti-videoad mute functionality (Beta).
@@ -147,7 +148,7 @@ function fixGlobal(){
     settingsContent+= "<br><br>* Beta\
 <br>** <i>Forces</i> the closest (available) value\
 <br>+ Pause the video when the ad is done, so you don't miss anything!";
-
+    
     settingsContent+= "<br><br><b>Links</b>\
 <br><a href=https://www.youtube.com/subscription_manager>Subscriptions</a>";    
     
@@ -835,30 +836,18 @@ if (location.href.match(/watch\?/) ){
     function myPauseVideo(){
         if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
             
-            $('.ad-container').children('iframe').attr('name', 'adIframen');
-            
-            
-            
-            if(document.adIframen != undefined)
-                adMention = document.adIframen.document.childNodes[0].innerHTML.lastIndexOf('Advertisement:');
-            else if($('.videoAdUiAttribution') != undefined){
-                try
-                {
-                    adMention = $('.videoAdUiAttribution').html().lastIndexOf('Advertisement:');
-                }
-                catch(err){
-                    // lastIndexOf throws exception once the ad is no longer there, make sure that doesn't make it all crash.
-                }
+            try{
+            adMention = $('div.videoAdUiAttribution').html().indexOf("Ad :");
             }
-                else{
-                }
+            catch(e){
+                adMention = -1;
+            }
             
             if(adMention != undefined && adMention > -1){
                 if(lastAdOnTime != ytplayer.getCurrentTime()){
                     ytplayer.mute();
                 }
-                else{
-                }
+                
                 lastAdOnTime = ytplayer.getCurrentTime();
                 adMention = -1;
             }
