@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.3
+// @version     1.7.1.4
+// @changes     1.7.1.4: Quick-fix, some flaws in the last update.
 // @changes     1.7.1.3: Video Ad-recognision structure was changed by YouTunbe - for the better! Quick-fix for Mute-compatibility.
 // @changes     1.7.1.2: Subscriptions-video structure was changed by YouTube - again. Quick-fix for compatibility.
 // @changes     1.7.1.1: Subscriptions-video structure was changed by YouTube. Quick-fix for compatibility.
@@ -837,19 +838,19 @@ if (location.href.match(/watch\?/) ){
         if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
             
             try{
-            adMention = $('div.videoAdUiAttribution').html().indexOf("Ad :");
+            adMention = $('div.videoAdUi').html().indexOf("Ad :") > -1 || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1;
             }
             catch(e){
-                adMention = -1;
+                adMention = false;
             }
             
-            if(adMention != undefined && adMention > -1){
+            if(adMention != undefined && adMention){
                 if(lastAdOnTime != ytplayer.getCurrentTime()){
                     ytplayer.mute();
                 }
                 
                 lastAdOnTime = ytplayer.getCurrentTime();
-                adMention = -1;
+                adMention = false;
             }
             else if(lastAdOnTime != -1){
                 lastAdOnTime = -1;
