@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.4
+// @version     1.7.1.5
+// @changes     1.7.1.5: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
 // @changes     1.7.1.4: Quick-fix, some flaws in the last update.
 // @changes     1.7.1.3: Video Ad-recognision structure was changed by YouTunbe - for the better! Quick-fix for Mute-compatibility.
 // @changes     1.7.1.2: Subscriptions-video structure was changed by YouTube - again. Quick-fix for compatibility.
@@ -467,7 +468,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
             hideTheRightStuff()
         });
         
-        $('#gh-activityfeed').prepend("<table border=0 id=fixesTable><tr id=videoTR></tr></table>");
+        $('#browse-items-primary').parent().prepend("<table border=0 id=fixesTable><tr id=videoTR></tr></table>");
         
         // Base function supplied by http://stackoverflow.com/users/331508/brock-adams
         function waitForKeyElements (selectorTxt,actionFunction,bWaitOnce,iframeSelector){
