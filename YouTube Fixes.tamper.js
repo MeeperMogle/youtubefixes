@@ -561,7 +561,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 $('.customWatched').show();
             
             $('#videoTR td').each(function(){
-                id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
+                var id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
                 
                 $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
                 
