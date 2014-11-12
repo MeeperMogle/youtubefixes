@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.5
+// @version     1.7.1.6
+// @changes     1.7.1.6: Fixed/added "Watch later"-button. Script previously broke it. Apologies.
 // @changes     1.7.1.5: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
 // @changes     1.7.1.4: Quick-fix, some flaws in the last update.
 // @changes     1.7.1.3: Video Ad-recognision structure was changed by YouTunbe - for the better! Quick-fix for Mute-compatibility.
@@ -36,7 +37,7 @@
 // Inserts code into the page including jQuery support
 function doJQuery(callback) {
     var script = document.createElement("script");
-    script.setAttribute("src", "https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js");
+    script.setAttribute("src", "https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js");
     script.addEventListener('load', function() {
         var script = document.createElement("script");
         script.textContent = "(" + callback.toString() + ")();";
@@ -492,6 +493,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         var imageLink;
                         var titleLink;
                         
+                        var watchLaterButton;
+                        
                         // Old layout
                         userLink = $(this).children('.feed-item-header').children('.feed-item-actions-line').children('.feed-item-owner').html();
                         
@@ -507,6 +510,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         
                         $(this).children('.feed-item-header').remove();
                         
+                        watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('a').eq(0).children('button.addto-watch-later-button')[0].outerHTML;
+                        watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('a').eq(0).children('button.addto-watch-later-button').remove();
                         imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
                         timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
@@ -556,7 +561,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 $('.customWatched').show();
             
             $('#videoTR td').each(function(){
-                var id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
+                id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
                 
                 $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
                 
@@ -613,12 +618,17 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     }
                 
                 if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
+                    // Add Watch-later button
+                    var watchLaterButton = '<button class="yt-uix-button yt-uix-button-size-small yt-uix-button-default yt-uix-button-empty yt-uix-button-has-icon addto-button video-actions spf-nolink hide-until-delayloaded addto-watch-later-button yt-uix-tooltip" type="button" onclick=";return false;" title="Watch Later" role="button" data-video-ids="'+id+'"><span class="yt-uix-button-icon-wrapper"><span class="yt-uix-button-icon yt-uix-button-icon-addto yt-sprite"></span></span></button>';
+                    
                     //add basic X button
-                    $(this).append('<span class="hideButton"><b>&nbsp;X&nbsp;</b></span>');
+                    $(this).append('<span class="hideButton""><b>&nbsp;X&nbsp;</b></span>' + watchLaterButton);
+                    
+                    $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 0 10px 35px');
                     
                     var button = $('.hideButton', this);
                     button.css('cursor', 'pointer'); //change cursor icon when hovering
-                    button.css('background-color', 'lightgrey').css('float', 'right').css('margin','0px 30px 30px 0px'); //make it easier to see
+                    button.css('background-color', 'lightgrey').css('float','right'); //make it easier to see
                     
                     //make it clickable
                     button.click(function(){
