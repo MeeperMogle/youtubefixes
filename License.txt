@@ -1,8 +1,7 @@
 Creator: MeeperMogle, alias Mogle
 Github: https://github.com/MeeperMogle
-Userscripts: http://userscripts.org/users/385903/scripts
 
-The code uploaded by Creator to Github and/or Userscripts may be used by all who comply with the below rules.
+The code uploaded by Creator to Github and/or any other site where this license is linked to may be used by all who comply with the below rules, unless otherwise specified for that particular project.
 
 - You may use and change the code as long as you name and include all above links and it is NOT for commercial use. Changes must also be named.
 
