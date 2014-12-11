@@ -2,8 +2,9 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.6
-// @changes     1.7.1.6: Fixed/added "Watch later"-button. Script previously broke it. Apologies.
+// @version     1.7.1.7
+// @changes     1.7.1.7: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
+// @changes     1.7.1.7: Fixed/added "Watch later"-button. Script previously broke it. Apologies.
 // @changes     1.7.1.5: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
 // @changes     1.7.1.4: Quick-fix, some flaws in the last update.
 // @changes     1.7.1.3: Video Ad-recognision structure was changed by YouTunbe - for the better! Quick-fix for Mute-compatibility.
@@ -52,7 +53,39 @@ function doJQuery(callback) {
 ctrlDown = false;
 shiftDown = false;
 
+fixesSettings = null;
+
 function fixGlobal(){
+    
+    function loadFixesSettings(){
+        fixesSettings = localStorage.getItem('ytfixes_settings');
+        if(!fixesSettings){
+            fixesSettings = {
+                "annotations":false,
+                "videoad_mute":false,
+                "videoad_autopause":false,
+                "autopause":false,
+                "quality_status":false,
+                "quality_value":"auto",
+                "speed_status":false,
+                "speed_value":100,
+                "volume_status":false,
+                "volume_value":100,
+                "custom_size":true
+            };
+            localStorage.setItem('ytfixes_settings', JSON.stringify(fixesSettings));
+        }
+        else{
+            fixesSettings = JSON.parse(fixesSettings); //make our string-item into an array
+        }
+    }
+    loadFixesSettings();
+    
+    function saveFixesSettings(){
+        localStorage.setItem('ytfixes_settings', JSON.stringify(fixesSettings));
+        loadFixesSettings();
+    }
+    
     $('#masthead-expanded-menu-list').append('<li class="masthead-expanded-menu-item"><a href="/inbox" class="yt-uix-sessionlink" data-sessionlink="' + $('a.yt-uix-sessionlink').attr("data-sessionlink") + '">Inbox</a></li>');
     
     document.onkeyup = function(event){
@@ -120,11 +153,11 @@ function fixGlobal(){
     
     var settingsHeader = "YouTube Fixes Settings (UNDER DEVELOPMENT)";
     var settingsContent = "<table style=''>";
-    settingsContent+= "<tr><td class=ytfixesTD>Annotations</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    //settingsContent+= "<tr><td class=ytfixesTD>Annotations</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>Custom video size</td><td class=ytfixesTD><input type=checkbox id=ytfixesCustomSize></td></tr>";
     settingsContent+= "<tr><td class=ytfixesTD>VideoAD mute</td><td class=ytfixesTD><input type=checkbox id=ytfixesVideoADmute></td></tr>";
-    settingsContent+= "<tr><td class=ytfixesTD>VideoAD autopause*+</td><td class=ytfixesTD><input type=checkbox id=ytfixesVideoADmute></td></tr>";
-    settingsContent+= "<tr><td class=ytfixesTD>Autopause</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
-    //settingsContent+= "<tr><td class=ytfixesTD>Captions</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>VideoAD autopause+</td><td class=ytfixesTD><input type=checkbox id=ytfixesVideoADautopause></td></tr>";
+    settingsContent+= "<tr><td class=ytfixesTD>Autopause++</td><td class=ytfixesTD><input type=checkbox id=ytfixesAutopause></td></tr>";
     settingsContent+= "<tr><td class=ytfixesTD>Quality**</td><td class=ytfixesTD>\<select id=ytfixesQuality>\
 <option value='1080'>1080p (HD)</option>\
 <option value='720'>720p (HD)</option>\
@@ -145,20 +178,20 @@ function fixGlobal(){
 <option value='2'>200%</option>\
 </select> <input type=checkbox id=ytfixesActivateSpeed checked></td></tr>"; // 0.25, 0.5, 1, 1.5, and 2.     setPlaybackRate(Number)      getAvailablePlaybackRates()
     settingsContent+= "<tr><td class=ytfixesTD>Volume**</td><td class=ytfixesTD><input type='number' min='0' max='100' value=100 id=ytfixesVolume> <input type=checkbox id=ytfixesActivateVolume checked></td></tr>"; // 0 - 100                    setVolume(Number)
-    //settingsContent+= "<tr><td class=ytfixesTD>----------</td><td class=ytfixesTD><input type=checkbox id=ytfixesAnnotations></td></tr>";
     settingsContent+= "</table>";
     
     settingsContent+= "<br><br>* Beta\
 <br>** <i>Forces</i> the closest (available) value\
-<br>+ Pause the video when the ad is done, so you don't miss anything!";
+<br>+ Video pauses when ad is done - fetch some coffee!\
+<br>++ Stops video from autoplaying.";
     
     settingsContent+= "<br><br><b>Links</b>\
-<br><a href=https://www.youtube.com/subscription_manager>Subscriptions</a>";    
+<br><a href=https://www.youtube.com/subscription_manager>Subscription manager</a>";    
     
     settingsContent+= "<br><br>Developer <input type=checkbox id=ytfixDevTestKitBox><br><div id=ytfixDevTestKit>\
-<textarea id=checkStuffText cols=50></textarea> <button id=checkStuff>Execute</button></div>";
+<textarea id=checkStuffText cols=40></textarea> <button id=checkStuff>Execute</button></div>";
     
-    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 -40px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
+    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 -70px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
     $('#ytfixesSettings').hide();
     
     $('#ytfixesSettings').append("<center><h1>" + settingsHeader + "</h1></center>_______________________________________________<br><br>" + settingsContent);
@@ -172,38 +205,175 @@ function fixGlobal(){
             $('#ytfixesSettings').hide();
     });
     
-    //$("#ytfixesSettingsButton").hide();
+    
+    //$('#ytfixesSettings').show();
+    
+    // Annotations-box ----------------------------
+    $('#ytfixesAnnotations').click(function(){
+        if($(this).is(':checked')){
+            fixesSettings.annotations = true;
+        }
+        else{
+            fixesSettings.annotations = false;
+        }
+        saveFixesSettings();
+    });
+    if(!fixesSettings.annotations){
+        $('#ytfixesAnnotations').attr('checked',false);
+    }
+    else{
+        $('#ytfixesAnnotations').attr('checked',true);
+    }
+    // End Annotations-box ----------------------------
+    
+    // Custom size-box ----------------------------
+    $('#ytfixesCustomSize').click(function(){
+        if($(this).is(':checked')){
+            fixesSettings.custom_size = true;
+        }
+        else{
+            fixesSettings.custom_size = false;
+        }
+        saveFixesSettings();
+        
+        if(!fixesSettings.custom_size){
+            $('#autoUpdateSize, #customPlayerWidth, #customPlayerHeight, .resizeSpan').hide();
+        }
+        else{
+            $('#autoUpdateSize, #customPlayerWidth, #customPlayerHeight, .resizeSpan').show();
+        }
+    });
+    if(!fixesSettings.custom_size){
+        $('#ytfixesCustomSize').attr('checked',false);
+    }
+    else{
+        $('#ytfixesCustomSize').attr('checked',true);
+    }
+    // End Custom size-box ----------------------------
+    
+    // VideoADmute-box ----------------------------
+    $('#ytfixesVideoADmute').click(function(){
+        if($(this).is(':checked')){
+            fixesSettings.videoad_mute = true;
+        }
+        else{
+            fixesSettings.videoad_mute = false;
+        }
+        saveFixesSettings();
+    });
+    if(!fixesSettings.videoad_mute){
+        $('#ytfixesVideoADmute').attr('checked',false);
+    }
+    else{
+        $('#ytfixesVideoADmute').attr('checked',true);
+    }
+    // End VideoADmute-box ----------------------------
+    
+    // VideoADautopause-box ----------------------------
+    $('#ytfixesVideoADautopause').click(function(){
+        if($(this).is(':checked')){
+            fixesSettings.videoad_autopause = true;
+        }
+        else{
+            fixesSettings.videoad_autopause = false;
+        }
+        saveFixesSettings();
+    });
+    if(!fixesSettings.videoad_autopause){
+        $('#ytfixesVideoADautopause').attr('checked',false);
+    }
+    else{
+        $('#ytfixesVideoADautopause').attr('checked',true);
+    }
+    // End VideoADautopause-box ----------------------------
+    
+    // Autopause-box ----------------------------
+    $('#ytfixesAutopause').click(function(){
+        if($(this).is(':checked')){
+            fixesSettings.autopause = true;
+        }
+        else{
+            fixesSettings.autopause = false;
+        }
+        saveFixesSettings();
+    });
+    if(!fixesSettings.autopause){
+        $('#ytfixesAutopause').attr('checked',false);
+    }
+    else{
+        $('#ytfixesAutopause').attr('checked',true);
+    }
+    // End Autopause-box ----------------------------
     
     
-    // Quality
+    
+    
+    
+    // Quality-box ----------------------------
     $('#ytfixesActivateQuality').click(function(){
         if($(this).is(':checked')){
             $('#ytfixesQuality').attr("disabled",false);
+            fixesSettings.quality_status = true;
         }
         else{
             $('#ytfixesQuality').attr("disabled",true);
+            fixesSettings.quality_status = false;
         }
+        saveFixesSettings();
     });
+    if(!fixesSettings.quality_status){
+        $('#ytfixesActivateQuality').attr('checked',false);
+        $('#ytfixesQuality').attr('disabled',true);
+    }
+    else{
+        $('#ytfixesActivateQuality').attr('checked',true);
+        $('#ytfixesQuality').attr('disabled',false);
+    }
+    // End Quality-box ----------------------------
     
-    // Speed
+    // Speed-box ----------------------------
     $('#ytfixesActivateSpeed').click(function(){
         if($(this).is(':checked')){
             $('#ytfixesSpeed').attr("disabled",false);
+            fixesSettings.speed_status = true;
         }
         else{
             $('#ytfixesSpeed').attr("disabled",true);
+            fixesSettings.speed_status = false;
         }
+        saveFixesSettings();
     });
+    if(!fixesSettings.speed_status){
+        $('#ytfixesActivateSpeed').attr('checked',false);
+        $('#ytfixesSpeed').attr('disabled',true);
+    }
+    else{
+        $('#ytfixesActivateSpeed').attr('checked',true);
+        $('#ytfixesSpeed').attr('disabled',false);
+    }
+    // End Speed-box ----------------------------
     
-    // Volume
+    // Volume-box ----------------------------
     $('#ytfixesActivateVolume').click(function(){
         if($(this).is(':checked')){
             $('#ytfixesVolume').attr("disabled",false);
+            fixesSettings.volume_status = true;
         }
         else{
             $('#ytfixesVolume').attr("disabled",true);
+            fixesSettings.volume_status = false;
         }
+        saveFixesSettings();
     });
+    if(!fixesSettings.volume_status){
+        $('#ytfixesActivateVolume').attr('checked',false);
+        $('#ytfixesVolume').attr('disabled',true);
+    }
+    else{
+        $('#ytfixesActivateVolume').attr('checked',true);
+        $('#ytfixesVolume').attr('disabled',false);
+    }
+    // End Volume-box ----------------------------
     
     // Developer
     $('#checkStuff').click(function(){
@@ -503,7 +673,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         + $(this).parent().children(".feed-author-bubble-container").children("a").children("span").children("span").children("span").children("span").children("img").attr("alt") + "</a>";
                         
                         // Even newer layout - what the fudge, beef?
-                        userLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('.yt-lockup-meta-info').children('li').eq(0).html();
+                        userLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-byline').html().replace("by "," ");
                         
                         // They keep adding stuff...
                         
@@ -514,8 +684,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('a').eq(0).children('button.addto-watch-later-button').remove();
                         imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
-                        timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
-                        views = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(2).html();
+                        timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
+                        views =   $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
                         
                         $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
                         $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
@@ -628,7 +798,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     
                     var button = $('.hideButton', this);
                     button.css('cursor', 'pointer'); //change cursor icon when hovering
-                    button.css('background-color', 'lightgrey').css('float','right'); //make it easier to see
+                    button.css('background-color', 'lightgrey').css('float','right').css('bottom','1px'); //make it easier to see
                     
                     //make it clickable
                     button.click(function(){
@@ -779,38 +949,52 @@ if (location.href.match(/watch\?/) ){
         
         
         
-        $('#eow-title').parent().parent().append( 'Resize video! Auto? <input type=checkbox id=autoUpdateSize> ' );
-        $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> x <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> px');
-        $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </p>' );
+        $('#eow-title').parent().parent().append( '<span class=resizeSpan>Resize video! Auto? <input type=checkbox id=autoUpdateSize> ' );
+        $('#eow-title').parent().parent().append( '<input type=text id=customPlayerWidth size=3 value="' + playerWidth + '"> <span class=resizeSpan>x</span> <input type=text size=3 id=customPlayerHeight value="' + playerHeight + '"> <span class=resizeSpan>px</span>');
+        $('#eow-title').parent().parent().append( ' <input type=submit id=customSizeSaveButton value="Save"> </span></p>' );
         $('#customSizeSaveButton').hide();
         
         
+        if(!fixesSettings.custom_size){
+            $('#autoUpdateSize, #customPlayerWidth, #customPlayerHeight, .resizeSpan').hide();
+        }
+        else{
+            $('#autoUpdateSize, #customPlayerWidth, #customPlayerHeight, .resizeSpan').show();
+        }
+        
         setTimeout(function(){
-            if($('.ytp-size-toggle-large').html() != undefined){
-                $('#watch7-sidebar').css('margin-top','0');
-                $('#player-api').css('float', 'none').css('margin', '0 auto');
-                $('#player').attr('class', 'watch-playlist-collapsed watch-medium');
-                $('.watch-small').css('max-width','')
+            if(fixesSettings.custom_size){
+                if($('.ytp-size-toggle-large').html() != undefined){
+                    $('#watch7-sidebar').css('margin-top','0');
+                    $('#player-api').css('float', 'none').css('margin', '0 auto');
+                    $('#player').attr('class', 'watch-playlist-collapsed watch-medium');
+                    $('.watch-small').css('max-width','')
+                }
+                
+                
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
             }
-            
-            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
-            $(fullVideoPlayerSelector).css('left', '0px');
-            $('video').css("width","100%").css("height","100%");
         }, 1500);
         
         setTimeout(function(){
-            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
-            $(fullVideoPlayerSelector).css('left', '0px');
-            $('video').css("width","100%").css("height","100%");
+            if(fixesSettings.custom_size){
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
+            }
         }, 2500);
         
         setTimeout(function(){
-            $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-            $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
-            $(fullVideoPlayerSelector).css('left', '0px');
-            $('video').css("width","100%").css("height","100%");
+            if(fixesSettings.custom_size){
+                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                $(fullVideoPlayerSelector).css('left', '0px');
+                $('video').css("width","100%").css("height","100%");
+            }
         }, 3500);
         
         $('#customPlayerWidth').keyup(function(){
@@ -849,14 +1033,14 @@ if (location.href.match(/watch\?/) ){
         if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
             
             try{
-            adMention = $('div.videoAdUi').html().indexOf("Ad :") > -1 || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1;
+                adMention = $('div.videoAdUi').html().indexOf("Ad :") > -1 || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1;
             }
             catch(e){
                 adMention = false;
             }
             
             if(adMention != undefined && adMention){
-                if(lastAdOnTime != ytplayer.getCurrentTime()){
+                if(lastAdOnTime != ytplayer.getCurrentTime() && fixesSettings.videoad_mute){
                     ytplayer.mute();
                 }
                 
@@ -865,20 +1049,37 @@ if (location.href.match(/watch\?/) ){
             }
             else if(lastAdOnTime != -1){
                 lastAdOnTime = -1;
-                ytplayer.pauseVideo();
+                
+                if(fixesSettings.videoad_autopause){
+                    ytplayer.pauseVideo();
+                }
                 ytplayer.unMute();
+                
                 ytfixesDoSettings();
                 
-                $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-                $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
-                $(fullVideoPlayerSelector).css('left', '0px');
-                $('video').css("width","100%").css("height","100%");
+                if(fixesSettings.custom_size){
+                    $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                    $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                    $(fullVideoPlayerSelector).css('left', '0px');
+                    $('video').css("width","100%").css("height","100%");
+                }
             }
                 else if(firstPause < 4){
                     firstPause++;
-                    if(ytplayer.getPlayerState() != 2){
+                    if(ytplayer.getPlayerState() != 2 && fixesSettings.autopause){
                         ytplayer.pauseVideo();
                         ytplayer.unMute();
+                    }
+                    
+                    // Don't want Annotations?
+                    // Activate Off-button
+                    if(!fixesSettings.annotations){
+                        //alert($('.ytp-button:contains("Off")').html());
+                    }
+                    // Do want Annotations?
+                    // Activate On-button
+                    else{
+                        //alert($('.ytp-button:contains("Off")').html());
                     }
                 }
                 }
@@ -973,11 +1174,10 @@ if (location.href.match(/watch\?/) ){
         });
     }
     
-    
     doJQuery(setUpReloadButton);
-    doJQuery(watchedVideo);
     doJQuery(addChangePlayerSizeControls);
     doJQuery(fullscreenShalntScrewWithSize);
+    doJQuery(watchedVideo);
 }
 // ----------------------------------------------------------------------------------------------------
 
