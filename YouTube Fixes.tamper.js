@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.7
+// @version     1.7.1.8
+// @changes     1.7.1.8: YouTube changed stuff around again. Fixed.
 // @changes     1.7.1.7: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
 // @changes     1.7.1.7: Fixed/added "Watch later"-button. Script previously broke it. Apologies.
 // @changes     1.7.1.5: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
@@ -636,7 +637,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
             }
             hiddenSeries.sort();
             localStorage.setItem('series_hider', hiddenSeries.join('||'));
-            hideTheRightStuff()
+            hideTheRightStuff();
         });
         
         $('#browse-items-primary').parent().prepend("<table border=0 id=fixesTable><tr id=videoTR></tr></table>");
@@ -680,15 +681,23 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         
                         $(this).children('.feed-item-header').remove();
                         
-                        watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('a').eq(0).children('button.addto-watch-later-button')[0].outerHTML;
-                        watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('a').eq(0).children('button.addto-watch-later-button').remove();
+                        //watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('span').children('button.addto-watch-later-button')[0].outerHTML;
+                        $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('span').children('button.addto-watch-later-button').remove();
                         imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
                         timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
                         views =   $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
                         
-                        $('#videoTR').append( "<td style='width:185px;height:200px;margin-left:20px;margin-top:10px;margin-bottom:10px;float:left;'>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
+                        $('#videoTR').append( "<td>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
                         $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
+                        
+                        $('#videoTR td').css('width', '185px');
+                        $('#videoTR td').css('height', '200px');
+                        $('span.contains-addto').css('height', '100px');
+                        $('#videoTR td').css('margin-left', '20px');
+                        $('#videoTR td').css('margin-top', '10px');
+                        $('#videoTR td').css('margin-bottom', '10px');
+                        $('#videoTR td').css('float', 'left');
                         
                         hideTheRightStuff();
                         
@@ -731,23 +740,22 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 $('.customWatched').show();
             
             $('#videoTR td').each(function(){
-                var id = $(this).children("a.ux-thumb-wrap").attr('href').substr($(this).children("a.ux-thumb-wrap").attr('href').indexOf('=')+1); //get the ID
+                var id = $(this).children("a.yt-uix-tile-link").attr('href').substr($(this).children("a.yt-uix-tile-link").attr('href').indexOf('=')+1); //get the ID
                 
                 $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
                 
                 if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
                     //remove the video if it's in our array of stuff to hide
                     $(this).hide();
-                } // 
-                else if(  $(this).html().indexOf('watched-badge') > -1 || $.inArray(id, watchedVideos) != -1 || $(this).html().indexOf('watched-message') > -1  ){
+                } else if(  $(this).html().indexOf('watched-badge') > -1 || $.inArray(id, watchedVideos) != -1 || $(this).html().indexOf('watched-message') > -1  ){
                     // Watched looks
                     $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
                     $(this).addClass('customWatched');
                     
-                    if($('#hideWatched').prop('checked'))
+                    if($('#hideWatched').prop('checked')){
                         $(this).hide();
-                    else{
-                        var title = $(this).children('a').eq(1).html();
+                    } else {
+                        var title = $(this).children('a').eq(0).html();
                         
                         for(var i=0; i<hiddenSeries.length; i++){
                             if( boxes.useRegex ){
@@ -757,35 +765,36 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                                     $(this).hide();
                                     break;
                                 }
+                            } else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                                $(this).hide();
+                                break;
+                            } else {
+                                
                             }
-                            else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                        }
+                    }
+                } else{
+                    $(this).show();
+                    // Get the title of the video
+                    var title = $(this).children('a').eq(0).html();
+                    
+                    // Hide the series
+                    for(var i=0; i<hiddenSeries.length; i++){
+                        if( boxes.useRegex ){
+                            var regex = new RegExp(hiddenSeries[i], "gim");
+                            
+                            if( title.match(regex) ){
                                 $(this).hide();
                                 break;
                             }
-                                }
+                        } else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                            $(this).hide();
+                            break;
+                        } else {
+                            
+                        }
                     }
                 }
-                    else{
-                        $(this).show();
-                        // Get the title of the video
-                        var title = $(this).children('a').eq(1).html();
-                        
-                        // Hide the series
-                        for(var i=0; i<hiddenSeries.length; i++){
-                            if( boxes.useRegex ){
-                                var regex = new RegExp(hiddenSeries[i], "gim");
-                                
-                                if( title.match(regex) ){
-                                    $(this).hide();
-                                    break;
-                                }
-                            }
-                            else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
-                                $(this).hide();
-                                break;
-                            }
-                                }
-                    }
                 
                 if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
                     // Add Watch-later button
