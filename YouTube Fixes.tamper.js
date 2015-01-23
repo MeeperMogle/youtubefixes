@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.8
+// @version     1.7.1.9
+// @changes     1.7.1.9: Watch-later buttons suddenly overlapped X buttons.
 // @changes     1.7.1.8: YouTube changed stuff around again. Fixed.
 // @changes     1.7.1.7: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
 // @changes     1.7.1.7: Fixed/added "Watch later"-button. Script previously broke it. Apologies.
@@ -803,7 +804,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     //add basic X button
                     $(this).append('<span class="hideButton""><b>&nbsp;X&nbsp;</b></span>' + watchLaterButton);
                     
-                    $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 0 10px 35px');
+                    $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 30 10px 35px');
                     
                     var button = $('.hideButton', this);
                     button.css('cursor', 'pointer'); //change cursor icon when hovering
