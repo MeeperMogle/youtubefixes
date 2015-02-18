@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.1.9
+// @version     1.7.2
+// @changes     1.7.2: Fixed a bug which made embedded videos useless, sorry about that.
 // @changes     1.7.1.9: Watch-later buttons suddenly overlapped X buttons.
 // @changes     1.7.1.8: YouTube changed stuff around again. Fixed.
 // @changes     1.7.1.7: YouTube slightly changed structure of Subscriptions-page. Quick-fix for that.
@@ -111,22 +112,24 @@ function fixGlobal(){
         }
             };
     
-    $("a[href*='watch?'], a[href*='feed'], a[href*='channel'], a[href*='subscription'], a[href*='playlist']").click(function(event){
-        if( event.which == 1 ){
-            var newURL = $(this).attr("href");
-            
-            if(ctrlDown || shiftDown){
+    if(top.location.href.match(/youtube\.com/)){
+        $("a[href*='watch?'], a[href*='feed'], a[href*='channel'], a[href*='subscription'], a[href*='playlist']").click(function(event){
+            if( event.which == 1 ){
+                var newURL = $(this).attr("href");
                 
+                if(ctrlDown || shiftDown){
+                    
+                }
+                else{
+                    top.location=newURL;
+                    window.location.href = newURL;
+                    self.location=newURL;
+                    window.navigate(newURL);
+                    return false;
+                }
             }
-            else{
-                top.location=newURL;
-                window.location.href = newURL;
-                self.location=newURL;
-                window.navigate(newURL);
-                return false;
-            }
-        }
-    });
+        });
+    }
     
     setTimeout(function(){
         if(autoChooseAccount && location.href.match(/action_prompt_identity=true/)){
