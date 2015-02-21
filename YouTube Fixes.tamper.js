@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.2
+// @version     1.7.3
+// @changes     1.7.3: New feature, hide videos in the Subscriptions-list which are older than a certain number of days.
 // @changes     1.7.2: Fixed a bug which made embedded videos useless, sorry about that.
 // @changes     1.7.1.9: Watch-later buttons suddenly overlapped X buttons.
 // @changes     1.7.1.8: YouTube changed stuff around again. Fixed.
@@ -432,7 +433,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         var boxes = localStorage.getItem('boxes_hider'); //get list of hidden videos
         if(!boxes){
             //if not found, make it into an empty array
-            boxes = {"hideWatched":true, "useRegex":false};
+            boxes = {"hideWatched":true, "useRegex":false, "noOlderThan":"-"};
             localStorage.setItem('boxes_hider', JSON.stringify(boxes));
         }
         else{
@@ -560,11 +561,25 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched>';
         var useRegexBox = 'RegEx in filters (<a href="" id=whatIsRegex>?</a>) <input type=checkbox id=useRegex>';
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
+        var daysFilter = 'Max <select id=noOlderThan><option value=->-</option></select> old';
         var seriesController = "<h2><span id=seriesControlTextareaHider style='color:grey;cursor:pointer;'></span></h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton style='margin-bottom:15px;'><hr color=black>";
-        $('#behavior-id-guide-playlists-section').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + unhideButton + "<p><br>" + seriesController );
+        $('#behavior-id-guide-playlists-section').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + daysFilter + "<p><br>" + unhideButton + "<p><br>" + seriesController );
         
         $('#seriesControlTextarea').hide();
         $('#seriesControlTextarea').show();
+        
+        for(i=0; i<=28;){
+            if(i<7){
+                $('#noOlderThan').append("<option value="+i+">"+i+" days</option>");
+                i++;
+            } else if(i==7){
+                $('#noOlderThan').append("<option value="+i+">"+(i/7)+" week</option>");
+                i+=7;
+            } else {
+                $('#noOlderThan').append("<option value="+i+">"+(i/7)+" weeks</option>");
+                i+=7;
+            }
+        }
         
         
         
@@ -616,6 +631,18 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         $('#hideWatched').prop('checked', boxes.hideWatched);
         $('#useRegex').prop('checked', boxes.useRegex);
         
+        if(!boxes.noOlderThan){
+            
+            boxes.noOlderThan = '-';
+            localStorage.setItem('boxes_hider', JSON.stringify(boxes));
+        }
+        document.getElementById('noOlderThan').value = boxes.noOlderThan;
+        
+        $('#noOlderThan').change(function(){
+            boxes.noOlderThan = document.getElementById('noOlderThan').value;
+            localStorage.setItem('boxes_hider', JSON.stringify(boxes));
+            hideTheRightStuff();
+        });
         
         
         //make our unhide-button clickable
@@ -744,23 +771,72 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 $('.customWatched').show();
             
             $('#videoTR td').each(function(){
-                var id = $(this).children("a.yt-uix-tile-link").attr('href').substr($(this).children("a.yt-uix-tile-link").attr('href').indexOf('=')+1); //get the ID
+                var alreadyHidden = false;
                 
-                $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
-                
-                if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
-                    //remove the video if it's in our array of stuff to hide
-                    $(this).hide();
-                } else if(  $(this).html().indexOf('watched-badge') > -1 || $.inArray(id, watchedVideos) != -1 || $(this).html().indexOf('watched-message') > -1  ){
-                    // Watched looks
-                    $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
-                    $(this).addClass('customWatched');
+                if(boxes.noOlderThan != "-"){
+                    var timeString = $(this).html().substring($(this).html().indexOf("Uploaded")).match(/(Uploaded \d+ [a-zA-Z]+ ago)/)[0];
                     
-                    if($('#hideWatched').prop('checked')){
+                    if(timeString.indexOf("minute") != -1){ // X minutes
+                        
+                    } else if(timeString.indexOf("hour") != -1) { // X hours
+                        
+                    } else if(timeString.indexOf("day") != -1) { // X days
+                        var unitAgo = parseInt(timeString.split(" ")[1]);
+                        if(unitAgo > parseInt(boxes.noOlderThan)){
+                            $(this).hide();
+                            alreadyHidden = true;
+                        }
+                    } else if(timeString.indexOf("week") != -1) { // X weeks
+                        var unitAgo = parseInt(timeString.split(" ")[1]);
+                        if(unitAgo > (parseInt(boxes.noOlderThan)/7)){
+                            $(this).hide();
+                            alreadyHidden = true;
+                        }
+                    } else { // don't even know...
+                        
+                    }
+                }
+                
+                if(!alreadyHidden){
+                    var id = $(this).children("a.yt-uix-tile-link").attr('href').substr($(this).children("a.yt-uix-tile-link").attr('href').indexOf('=')+1); //get the ID
+                    
+                    $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
+                    
+                    if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
+                        //remove the video if it's in our array of stuff to hide
                         $(this).hide();
-                    } else {
+                    } else if(  $(this).html().indexOf('watched-badge') > -1 || $.inArray(id, watchedVideos) != -1 || $(this).html().indexOf('watched-message') > -1  ){
+                        // Watched looks
+                        $(this).children('a').children('span').children('span').children('span').children('span').children('img').css('opacity', '0.2');
+                        $(this).addClass('customWatched');
+                        
+                        if($('#hideWatched').prop('checked')){
+                            $(this).hide();
+                        } else {
+                            var title = $(this).children('a').eq(0).html();
+                            
+                            for(var i=0; i<hiddenSeries.length; i++){
+                                if( boxes.useRegex ){
+                                    var regex = new RegExp(hiddenSeries[i], "gim");
+                                    
+                                    if( title.match(regex) ){
+                                        $(this).hide();
+                                        break;
+                                    }
+                                } else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
+                                    $(this).hide();
+                                    break;
+                                } else {
+                                    
+                                }
+                            }
+                        }
+                    } else{
+                        $(this).show();
+                        // Get the title of the video
                         var title = $(this).children('a').eq(0).html();
                         
+                        // Hide the series
                         for(var i=0; i<hiddenSeries.length; i++){
                             if( boxes.useRegex ){
                                 var regex = new RegExp(hiddenSeries[i], "gim");
@@ -777,49 +853,29 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                             }
                         }
                     }
-                } else{
-                    $(this).show();
-                    // Get the title of the video
-                    var title = $(this).children('a').eq(0).html();
                     
-                    // Hide the series
-                    for(var i=0; i<hiddenSeries.length; i++){
-                        if( boxes.useRegex ){
-                            var regex = new RegExp(hiddenSeries[i], "gim");
-                            
-                            if( title.match(regex) ){
-                                $(this).hide();
-                                break;
-                            }
-                        } else if( title.toLowerCase().indexOf(hiddenSeries[i].toLowerCase()) > -1 ){
-                            $(this).hide();
-                            break;
-                        } else {
-                            
-                        }
+                    if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
+                        // Add Watch-later button
+                        var watchLaterButton = '<button class="yt-uix-button yt-uix-button-size-small yt-uix-button-default yt-uix-button-empty yt-uix-button-has-icon addto-button video-actions spf-nolink hide-until-delayloaded addto-watch-later-button yt-uix-tooltip" type="button" onclick=";return false;" title="Watch Later" role="button" data-video-ids="'+id+'"><span class="yt-uix-button-icon-wrapper"><span class="yt-uix-button-icon yt-uix-button-icon-addto yt-sprite"></span></span></button>';
+                        
+                        //add basic X button
+                        $(this).append('<span class="hideButton""><b>&nbsp;X&nbsp;</b></span>' + watchLaterButton);
+                        
+                        $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 30 10px 35px');
+                        
+                        var button = $('.hideButton', this);
+                        button.css('cursor', 'pointer'); //change cursor icon when hovering
+                        button.css('background-color', 'lightgrey').css('float','right').css('bottom','1px'); //make it easier to see
+                        
+                        //make it clickable
+                        button.click(function(){
+                            hidden.push(id); //add ID to our array
+                            localStorage.setItem('video_hider', hidden.join(':')); //store it
+                            $(this).parent().hide(); //hide the video
+                        });
                     }
                 }
                 
-                if( $(this).html().indexOf('&nbsp;X&nbsp;') == -1 ){
-                    // Add Watch-later button
-                    var watchLaterButton = '<button class="yt-uix-button yt-uix-button-size-small yt-uix-button-default yt-uix-button-empty yt-uix-button-has-icon addto-button video-actions spf-nolink hide-until-delayloaded addto-watch-later-button yt-uix-tooltip" type="button" onclick=";return false;" title="Watch Later" role="button" data-video-ids="'+id+'"><span class="yt-uix-button-icon-wrapper"><span class="yt-uix-button-icon yt-uix-button-icon-addto yt-sprite"></span></span></button>';
-                    
-                    //add basic X button
-                    $(this).append('<span class="hideButton""><b>&nbsp;X&nbsp;</b></span>' + watchLaterButton);
-                    
-                    $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 30 10px 35px');
-                    
-                    var button = $('.hideButton', this);
-                    button.css('cursor', 'pointer'); //change cursor icon when hovering
-                    button.css('background-color', 'lightgrey').css('float','right').css('bottom','1px'); //make it easier to see
-                    
-                    //make it clickable
-                    button.click(function(){
-                        hidden.push(id); //add ID to our array
-                        localStorage.setItem('video_hider', hidden.join(':')); //store it
-                        $(this).parent().hide(); //hide the video
-                    });
-                }
                 
             });
             
