@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.3.1
+// @version     1.7.3.2
+// @changes     1.7.3.2: Youtube looooves to change their DOM around... Fixes to un-break the Subscriptions-page.
 // £changes     1.7.3.1: Bugfix; Livestreams broke the latest feature.
 // @changes     1.7.3: New feature, hide videos in the Subscriptions-list which are older than a certain number of days.
 // @changes     1.7.2: Fixed a bug which made embedded videos useless, sorry about that.
@@ -714,12 +715,13 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         $(this).children('.feed-item-header').remove();
 
                         //watchLaterButton = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('span').children('button.addto-watch-later-button')[0].outerHTML;
-                        $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('span').children('button.addto-watch-later-button').remove();
+                        $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').children('button.addto-watch-later-button').remove();
                         imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
                         timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
                         
                         views =   $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
+                        
 
                         if(views == undefined)
                             views = '<span class="yt-badge  yt-badge-live">Live now</span>';
@@ -812,7 +814,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 if(!alreadyHidden){
                     var id = $(this).children("a.yt-uix-tile-link").attr('href').substr($(this).children("a.yt-uix-tile-link").attr('href').indexOf('=')+1); //get the ID
 
-                    $(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
+                    //$(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
 
                     if($.inArray(id, hidden)!=-1 || $.inArray('/watch?v=' + id, hidden)!=-1 || false){
                         //remove the video if it's in our array of stuff to hide
@@ -825,7 +827,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         if($('#hideWatched').prop('checked')){
                             $(this).hide();
                         } else {
-                            var title = $(this).children('a').eq(0).html();
+                            var title = $(this).children('a').eq(1).html();
 
                             for(var i=0; i<hiddenSeries.length; i++){
                                 if( boxes.useRegex ){
@@ -846,7 +848,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     } else{
                         $(this).show();
                         // Get the title of the video
-                        var title = $(this).children('a').eq(0).html();
+                        var title = $(this).children('a').eq(1).html();
 
                         // Hide the series
                         for(var i=0; i<hiddenSeries.length; i++){
@@ -873,11 +875,10 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         //add basic X button
                         $(this).append('<span class="hideButton""><b>&nbsp;X&nbsp;</b></span>' + watchLaterButton);
 
-                        $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('right','').css('bottom','').css('margin','0 30 10px 35px');
 
                         var button = $('.hideButton', this);
                         button.css('cursor', 'pointer'); //change cursor icon when hovering
-                        button.css('background-color', 'lightgrey').css('float','right').css('bottom','1px'); //make it easier to see
+                        button.css('background-color', 'lightgrey').css('float','right').css('margin-top','10px'); //make it easier to see
 
                         //make it clickable
                         button.click(function(){
@@ -907,6 +908,10 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     }
                 }
             });
+            
+            $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('margin-top','10px');
+            $('span.video-time').css('position','relative').css('margin','-12px 0 0 150px').css('opacity','1');
+            $('a.yt-uix-tile-link').css('margin-top','-10px');
         }
 
         $('#hideWatched').mousedown(function() {
@@ -1266,16 +1271,14 @@ if (location.href.match(/watch\?/) ){
 if (location.href.match(/playlist\?/) ){
 
     function viewCountOnPlaylist(){
-        var total = 0;
-
         var hours = 0;
         var minutes = 0;
         var seconds = 0;
 
-        $('div.timestamp').each(function(){
+        $('div.timestamp span').each(function(){
             var time = $(this).html();
             var separators = time.match(/:/g).length;
-
+            
             if(separators == 0){
                 seconds += parseInt(time)
             } else if(separators == 1){
