@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.3.2
+// @version     1.7.3.3
+// @changes     1.7.3.3: Autopause should no longer interfere once you click to start the video yourself.
 // @changes     1.7.3.2: Youtube looooves to change their DOM around... Fixes to un-break the Subscriptions-page.
 // £changes     1.7.3.1: Bugfix; Livestreams broke the latest feature.
 // @changes     1.7.3: New feature, hide videos in the Subscriptions-list which are older than a certain number of days.
@@ -1115,6 +1116,12 @@ if (location.href.match(/watch\?/) ){
 
     var adMention;
     firstPause = 0;
+    
+    ytplayer.onclick = function(){
+        firstPause = 4;
+    };
+    
+    
     function myPauseVideo(){
         if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
 
