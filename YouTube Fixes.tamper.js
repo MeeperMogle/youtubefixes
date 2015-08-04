@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.3.3
+// @version     1.7.3.4
+// @changes     1.7.3.4: Hotfix: Fullscreen broke with the new video player look.
 // @changes     1.7.3.3: Autopause should no longer interfere once you click to start the video yourself.
 // @changes     1.7.3.2: Youtube looooves to change their DOM around... Fixes to un-break the Subscriptions-page.
 // £changes     1.7.3.1: Bugfix; Livestreams broke the latest feature.
@@ -720,13 +721,13 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         imageLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-thumbnail').html();
                         titleLink = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-title').html();
                         timeAgo = $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(0).html();
-                        
+
                         views =   $(this).children('.yt-lockup-dismissable').children('div.yt-lockup-content').children('.yt-lockup-meta').children('ul').children('li').eq(1).html();
-                        
+
 
                         if(views == undefined)
                             views = '<span class="yt-badge  yt-badge-live">Live now</span>';
-                        
+
                         $('#videoTR').append( "<td>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
                         $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
 
@@ -909,7 +910,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                     }
                 }
             });
-            
+
             $('button.addto-watch-later-button').css('opacity','1').css('position','relative').css('margin-top','10px');
             $('span.video-time').css('position','relative').css('margin','-12px 0 0 150px').css('opacity','1');
             $('a.yt-uix-tile-link').css('margin-top','-10px');
@@ -1116,17 +1117,20 @@ if (location.href.match(/watch\?/) ){
 
     var adMention;
     firstPause = 0;
-    
+
     ytplayer.onclick = function(){
         firstPause = 4;
     };
-    
-    
+
+
     function myPauseVideo(){
-        if( ytplayer.getDuration() && (true || ytplayer.getPlayerState() != -1)){
+        if( ytplayer.getDuration() && (true && ytplayer.getPlayerState() != -1)){
 
             try{
-                adMention = $('div.videoAdUi').html().indexOf("Ad :") > -1 || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1;
+                adMention = $('div.videoAdUiAttribution').html().indexOf("Ad ") == 0 
+                || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1
+                || $('div.videoAdUi').html().indexOf("Ad :") > -1 
+                ;
             }
             catch(e){
                 adMention = false;
@@ -1179,7 +1183,8 @@ if (location.href.match(/watch\?/) ){
         $('body').css('overflow','auto');
         //setTimeout(myPauseVideo,600);
     }
-    setInterval(myPauseVideo,500);
+    // myPauseVideo();
+    setInterval(myPauseVideo,300);
     //setTimeout(myPauseVideo,1500);
 
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
@@ -1245,6 +1250,7 @@ if (location.href.match(/watch\?/) ){
         });
 
         $('video').dblclick(function(){
+            /*
             setTimeout(function(){
                 $('video').css("width","100%").css("height","100%");
 
@@ -1256,6 +1262,7 @@ if (location.href.match(/watch\?/) ){
                     }
                 });
             },750);
+            */
         });
 
         $('*').keydown( function(event){
@@ -1275,7 +1282,7 @@ if (location.href.match(/watch\?/) ){
 // ----------------------------------------------------------------------------------------------------
 
 // Codepart 4: Playlist. Adds counter to the Playlist-pages that show the total time for all the videos in the playlist.
-if (location.href.match(/playlist\?/) ){
+if (location.href.match(/(playlist|course)\?/) ){
 
     function viewCountOnPlaylist(){
         var hours = 0;
@@ -1285,7 +1292,7 @@ if (location.href.match(/playlist\?/) ){
         $('div.timestamp span').each(function(){
             var time = $(this).html();
             var separators = time.match(/:/g).length;
-            
+
             if(separators == 0){
                 seconds += parseInt(time)
             } else if(separators == 1){
@@ -1309,8 +1316,17 @@ if (location.href.match(/playlist\?/) ){
             hours++;
         }
 
-        $('.pl-header-details').eq(0).append("<li>Total time " + hours + ":" + minutes + ":" + seconds + "</li>");
+        if($('.pl-header-details').eq(0).html().indexOf("totalTime") == -1){
+            $('.pl-header-details').eq(0).append("<span id=totalTime></span>");
+        }
 
+        $('#totalTime').html("<li>Total time " + hours + ":" + minutes + ":" + seconds + "</li>");
+
+        $('button.browse-items-load-more-button').click(function(){
+            setTimeout(function(){
+                viewCountOnPlaylist();
+            }, 3000);
+        });
     }
 
     doJQuery(viewCountOnPlaylist);
