@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.3.4
+// @version     1.7.3.5
+// @changes     1.7.3.5: Hotfix: YouTube broke the Subscriptions-page by changing a single ID... Possibly other small fixes, too.
 // @changes     1.7.3.4: Hotfix: Fullscreen broke with the new video player look.
 // @changes     1.7.3.3: Autopause should no longer interfere once you click to start the video yourself.
 // @changes     1.7.3.2: Youtube looooves to change their DOM around... Fixes to un-break the Subscriptions-page.
@@ -201,8 +202,9 @@ function fixGlobal(){
     settingsContent+= "<br><br>Developer <input type=checkbox id=ytfixDevTestKitBox><br><div id=ytfixDevTestKit>\
 <textarea id=checkStuffText cols=40></textarea> <button id=checkStuff>Execute</button></div>";
 
-    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 -70px;z-index:1000;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
+    $('#yt-masthead-user').append("<div id='ytfixesSettings' style='overflow:scroll;position:absolute;margin:10px 0 0 -80px;z-index:100;width:350px;max-height:500px;padding:10px;background-color:white; border:2px solid black;'></div>");
     $('#ytfixesSettings').hide();
+    $('#masthead-positioner').css('z-index','10');
 
     $('#ytfixesSettings').append("<center><h1>" + settingsHeader + "</h1></center>_______________________________________________<br><br>" + settingsContent);
 
@@ -458,7 +460,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
 
         // Option to hide Recommended Channels
         $('#feed').parent().css("width","100%");
-        $('#content').css("width","98.5%").css('margin-left','0px');
+        $('#content').css("width","98.5%").css('margin-left','-10px');
 
 
 
@@ -497,6 +499,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
 
 
         $('.feed-item-main').css('margin','0');
+        
+        $('.yt-base-gutter').css('min-width','0px');
 
         $('div.yt-lockup-description').remove();
         $('div.feed-header').remove();
@@ -505,6 +509,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         // Loads pages as far as possible, one at a time but without you having to keep clicking.
         //$('.feed-load-more-container').eq(0).html( $('.feed-load-more-container').eq(0).html()  + '<input type=submit value="LOAD ALL" id=loadALL>');
         $('#browse-items-primary').prepend('<center><input type=submit style="" value="LOAD ALL" id=loadALL></center>');
+        $('#loadALL').css('margin-top','15px');
 
 
 
@@ -567,7 +572,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
         var daysFilter = 'Max <select id=noOlderThan><option value=->-</option></select> old';
         var seriesController = "<h2><span id=seriesControlTextareaHider style='color:grey;cursor:pointer;'></span></h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton style='margin-bottom:15px;'><hr color=black>";
-        $('#behavior-id-guide-playlists-section').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + daysFilter + "<p><br>" + unhideButton + "<p><br>" + seriesController );
+        $('#guide-container').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + daysFilter + "<p><br>" + unhideButton + "<p><br>" + seriesController );
 
         $('#seriesControlTextarea').hide();
         $('#seriesControlTextarea').show();
@@ -728,7 +733,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                         if(views == undefined)
                             views = '<span class="yt-badge  yt-badge-live">Live now</span>';
 
-                        $('#videoTR').append( "<td>" + imageLink + titleLink + "<br>Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
+                        $('#videoTR').append( "<td>" + imageLink + titleLink + "Uploaded " + timeAgo + userLink + "<br>" + views + "</td>" );
                         $(this).parent().parent().parent().parent().parent().parent().parent().parent().remove();
 
                         $('#videoTR td').css('width', '185px');
@@ -1012,11 +1017,6 @@ if (location.href.match(/watch\?/) ){
     }
     doJQuery(spacebarToPause);
 
-    function lookOnReddit(){
-        $("#action-panel-details").prepend( "<a target=_blank href='http://www.reddit.com/search?q=" + $("#eow-title").attr('title').replace(/'/, '').replace(/  /,' ') + "'>Search on Reddit</a>" );
-    }
-    doJQuery(lookOnReddit);
-
     function addChangePlayerSizeControls(){
         $('#theater-background').remove();
 
@@ -1123,6 +1123,7 @@ if (location.href.match(/watch\?/) ){
     };
 
 
+    var volumeBeforePause;
     function myPauseVideo(){
         if( ytplayer.getDuration() && (true && ytplayer.getPlayerState() != -1)){
 
@@ -1138,6 +1139,7 @@ if (location.href.match(/watch\?/) ){
 
             if(adMention != undefined && adMention){
                 if(lastAdOnTime != ytplayer.getCurrentTime() && fixesSettings.videoad_mute){
+                    volumeBeforePause = ytplayer.getVolume();
                     ytplayer.mute();
                 }
 
@@ -1151,6 +1153,7 @@ if (location.href.match(/watch\?/) ){
                     ytplayer.pauseVideo();
                 }
                 ytplayer.unMute();
+                ytplayer.setVolume(volumeBeforePause);
 
                 ytfixesDoSettings();
 
@@ -1166,6 +1169,7 @@ if (location.href.match(/watch\?/) ){
                 if(ytplayer.getPlayerState() != 2 && fixesSettings.autopause){
                     ytplayer.pauseVideo();
                     ytplayer.unMute();
+                    ytplayer.setVolume(volumeBeforePause);
                 }
 
                 // Don't want Annotations?
