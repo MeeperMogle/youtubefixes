@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.3.5
+// @version     1.7.4
+// @changes     1.7.4: More reliable "Watched"-functionality. Fix: The upper-left menu "drawer" should now work better.
 // @changes     1.7.3.5: Hotfix: YouTube broke the Subscriptions-page by changing a single ID... Possibly other small fixes, too.
 // @changes     1.7.3.4: Hotfix: Fullscreen broke with the new video player look.
 // @changes     1.7.3.3: Autopause should no longer interfere once you click to start the video yourself.
@@ -158,6 +159,29 @@ function fixGlobal(){
         }
     },750);
 
+    
+    var guideDiv = "<div id=guideDiv>meep</div>";
+    $('#page').prepend(guideDiv);
+    $('#guideDiv').attr('style','width:250px;background-color:white;position:absolute;z-index:100;height:80%;overflow:scroll;display:block;float:left;padding:5px;');
+    $('#guideDiv').html( $('#guide-container').html() );
+
+    $('#guideDiv').hide();
+    $('#page').css('margin-left','10px');
+
+    $('#appbar-guide-button-container').click(function(){
+
+        if($('#guideDiv').css('display') == 'block'){
+            $('#guideDiv').hide();
+            $('#page').css('margin-left','10px');
+        } else {
+            $('#guideDiv').css('margin-left','-280px');
+            $('#guideDiv').show();
+            $('#page').css('margin-left','280px');
+        }
+
+    });
+    
+    
 
     var settingsButton = "<span style='margin-right:5px;margin-top:2px;'><input type=button id=ytfixesSettingsButton value='YouTube Fixes'></span>";
     $('#yt-masthead-user').prepend(settingsButton);
@@ -402,6 +426,11 @@ function fixGlobal(){
             $('#ytfixDevTestKit').hide();
         }
     });
+
+    $('#masthead-appbar-container').remove();
+
+
+    
 }
 doJQuery(fixGlobal);
 
@@ -424,8 +453,6 @@ if (location.href.match(/redirect\?q=/) ){
 
     doJQuery(redirectThrough);
 }
-
-
 
 
 
@@ -499,7 +526,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
 
 
         $('.feed-item-main').css('margin','0');
-        
+
         $('.yt-base-gutter').css('min-width','0px');
 
         $('div.yt-lockup-description').remove();
@@ -571,8 +598,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
         var useRegexBox = 'RegEx in filters (<a href="" id=whatIsRegex>?</a>) <input type=checkbox id=useRegex>';
         var unhideButton = '<button id="clear_hidden_list" class="yt-uix-button">Show manually hidden videos</button>';
         var daysFilter = 'Max <select id=noOlderThan><option value=->-</option></select> old';
-        var seriesController = "<h2><span id=seriesControlTextareaHider style='color:grey;cursor:pointer;'></span></h2><textarea id=seriesControlTextarea cols=25 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton style='margin-bottom:15px;'><hr color=black>";
-        $('#guide-container').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + daysFilter + "<p><br>" + unhideButton + "<p><br>" + seriesController );
+        var seriesController = "<h2><span id=seriesControlTextareaHider style='color:grey;cursor:pointer;'></span></h2><textarea id=seriesControlTextarea cols=20 rows=4></textarea><br><input type=submit value=Filter id=seriesControlFilterButton style='margin-bottom:15px;'><hr color=black>";
+        $('#guideDiv').eq(0).prepend( hideWatchedBox + "<p><br>" + useRegexBox + "<p><br>" + daysFilter + "<p><br>" + unhideButton + "<p><br>" + seriesController );
 
         $('#seriesControlTextarea').hide();
         $('#seriesControlTextarea').show();
@@ -592,10 +619,9 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
 
 
 
-        $('#seriesControlTextarea').css('width','110%');
+        $('#seriesControlTextarea').css('width','90%');
         $('#seriesControlTextarea').css('height','150px');
         $('#seriesControlTextarea').css('padding','0');
-        $('#seriesControlTextarea').css('margin-left','-20px');
         $('#seriesControlTextarea').css('overflow','auto');
 
         var hideFilterbox = localStorage.getItem('hide_filterbox_hider'); //get list of hidden videos
@@ -1123,73 +1149,76 @@ if (location.href.match(/watch\?/) ){
     };
 
 
-    var volumeBeforePause;
+    var volumeBeforePause = 100;
     function myPauseVideo(){
-        if( ytplayer.getDuration() && (true && ytplayer.getPlayerState() != -1)){
+        try{
+            if( ytplayer.getDuration() && (true && ytplayer.getPlayerState() != -1)){
 
-            try{
-                adMention = $('div.videoAdUiAttribution').html().indexOf("Ad ") == 0 
-                || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1
-                || $('div.videoAdUi').html().indexOf("Ad :") > -1 
-                ;
-            }
-            catch(e){
-                adMention = false;
-            }
-
-            if(adMention != undefined && adMention){
-                if(lastAdOnTime != ytplayer.getCurrentTime() && fixesSettings.videoad_mute){
-                    volumeBeforePause = ytplayer.getVolume();
-                    ytplayer.mute();
+                try{
+                    adMention = $('div.videoAdUiAttribution').html().indexOf("Ad ") == 0 
+                    || $('div.videoAdUi').html().indexOf("videoAdUiProgressBar") > -1
+                    || $('div.videoAdUi').html().indexOf("Ad :") > -1 
+                    ;
+                }
+                catch(e){
+                    adMention = false;
                 }
 
-                lastAdOnTime = ytplayer.getCurrentTime();
-                adMention = false;
-            }
-            else if(lastAdOnTime != -1){
-                lastAdOnTime = -1;
+                if(adMention != undefined && adMention){
+                    if(lastAdOnTime != ytplayer.getCurrentTime() && fixesSettings.videoad_mute){
+                        volumeBeforePause = ytplayer.getVolume();
+                        ytplayer.mute();
+                    }
 
-                if(fixesSettings.videoad_autopause){
-                    ytplayer.pauseVideo();
+                    lastAdOnTime = ytplayer.getCurrentTime();
+                    adMention = false;
                 }
-                ytplayer.unMute();
-                ytplayer.setVolume(volumeBeforePause);
+                else if(lastAdOnTime != -1){
+                    lastAdOnTime = -1;
 
-                ytfixesDoSettings();
-
-                if(fixesSettings.custom_size){
-                    $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
-                    $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
-                    $(fullVideoPlayerSelector).css('left', '0px');
-                    $('video').css("width","100%").css("height","100%");
-                }
-            }
-            else if(firstPause < 4){
-                firstPause++;
-                if(ytplayer.getPlayerState() != 2 && fixesSettings.autopause){
-                    ytplayer.pauseVideo();
+                    if(fixesSettings.videoad_autopause){
+                        ytplayer.pauseVideo();
+                    }
                     ytplayer.unMute();
                     ytplayer.setVolume(volumeBeforePause);
-                }
 
-                // Don't want Annotations?
-                // Activate Off-button
-                if(!fixesSettings.annotations){
-                    //alert($('.ytp-button:contains("Off")').html());
+                    ytfixesDoSettings();
+
+                    if(fixesSettings.custom_size){
+                        $(fullVideoPlayerSelector).css('width', $('#customPlayerWidth').val() + 'px');
+                        $(fullVideoPlayerSelector).css('height', $('#customPlayerHeight').val() + 'px');
+                        $(fullVideoPlayerSelector).css('left', '0px');
+                        $('video').css("width","100%").css("height","100%");
+                    }
                 }
-                // Do want Annotations?
-                // Activate On-button
-                else{
-                    //alert($('.ytp-button:contains("Off")').html());
+                else if(firstPause < 4){
+                    firstPause++;
+                    if(ytplayer.getPlayerState() != 2 && fixesSettings.autopause){
+                        ytplayer.pauseVideo();
+                        ytplayer.unMute();
+                        ytplayer.setVolume(volumeBeforePause);
+                    }
+
+                    // Don't want Annotations?
+                    // Activate Off-button
+                    if(!fixesSettings.annotations){
+                        //alert($('.ytp-button:contains("Off")').html());
+                    }
+                    // Do want Annotations?
+                    // Activate On-button
+                    else{
+                        //alert($('.ytp-button:contains("Off")').html());
+                    }
                 }
             }
+            $('body').css('overflow','auto');
+        } catch(e){
+            console.log("meep: " + e + " | " + volumeBeforePause);
         }
-        $('body').css('overflow','auto');
-        //setTimeout(myPauseVideo,600);
+
+
     }
-    // myPauseVideo();
     setInterval(myPauseVideo,300);
-    //setTimeout(myPauseVideo,1500);
 
     // There is a known bug on YouTube where the video suddenly just stops, setting Current Time = Total Duration of the video...
     // This function adds a Reload-button which reloads the page - starting at the current time, so you don't have to manually go there!
@@ -1234,7 +1263,16 @@ if (location.href.match(/watch\?/) ){
         if( $.inArray(video_id,watchedVideos) == -1 ){
             watchedVideos.push(video_id); //add ID to our array
             localStorage.setItem('watched_hider', watchedVideos.join(':')); //store it
-        }   
+        }
+
+        setTimeout(function(){
+            var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
+            watchedVideos = watchedVideos.split(':'); //make our string-item into an array
+
+            if( $.inArray(video_id,watchedVideos) == -1 ){
+                watchedVideo();
+            }
+        },1000);
     }
 
     // Fullscreen stuff testing
