@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.4
+// @version     1.7.4.1
+// @changes     1.7.4.1: YouTube changed their structure, last Fix broke...
 // @changes     1.7.4: More reliable "Watched"-functionality. Fix: The upper-left menu "drawer" should now work better.
 // @changes     1.7.3.5: Hotfix: YouTube broke the Subscriptions-page by changing a single ID... Possibly other small fixes, too.
 // @changes     1.7.3.4: Hotfix: Fullscreen broke with the new video player look.
@@ -138,6 +139,7 @@ function fixGlobal(){
         });
     }
 
+    var autoChooseAccount = false;
     setTimeout(function(){
         if(autoChooseAccount && location.href.match(/action_prompt_identity=true/)){
 
@@ -161,14 +163,23 @@ function fixGlobal(){
 
     
     var guideDiv = "<div id=guideDiv>meep</div>";
+    console.log("YTfiXes: guideDiv base HTML created");
+    
     $('#page').prepend(guideDiv);
+    console.log("YTfiXes: guideDiv added to page");
+    
     $('#guideDiv').attr('style','width:250px;background-color:white;position:absolute;z-index:100;height:80%;overflow:scroll;display:block;float:left;padding:5px;');
+    console.log("YTfiXes: guideDiv styles applied");
+    
     $('#guideDiv').html( $('#guide-container').html() );
+    console.log("YTfiXes: guideDiv given guide-container HTML contents");
 
     $('#guideDiv').hide();
+    console.log("YTfiXes: guideDiv hidden");
+    
     $('#page').css('margin-left','10px');
 
-    $('#appbar-guide-button-container').click(function(){
+    $('#appbar-guide-button').click(function(){
 
         if($('#guideDiv').css('display') == 'block'){
             $('#guideDiv').hide();
