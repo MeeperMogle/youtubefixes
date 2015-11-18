@@ -2,7 +2,8 @@
 // @name        YouTube Fixes
 // @namespace   Mogle
 // @include     http*://*.youtube.com/*
-// @version     1.7.4.1
+// @version     1.7.4.2
+// @changes     1.7.4.1: YouTube changed some small things, hotfix.
 // @changes     1.7.4.1: YouTube changed their structure, last Fix broke...
 // @changes     1.7.4: More reliable "Watched"-functionality. Fix: The upper-left menu "drawer" should now work better.
 // @changes     1.7.3.5: Hotfix: YouTube broke the Subscriptions-page by changing a single ID... Possibly other small fixes, too.
@@ -43,7 +44,6 @@
 // Codepart 2: Subscriptions page - Adds all of the controls to the Subscriptions page
 // Codepart 3: The Watch-page - Adds functionality for Watched-functionality, customize player size...
 // Codepart 4: Playlist - Adds counter to the Playlist-pages that show the total time for all the videos in the playlist.
-
 
 
 // Inserts code into the page including jQuery support
@@ -161,22 +161,22 @@ function fixGlobal(){
         }
     },750);
 
-    
+
     var guideDiv = "<div id=guideDiv>meep</div>";
     console.log("YTfiXes: guideDiv base HTML created");
-    
+
     $('#page').prepend(guideDiv);
     console.log("YTfiXes: guideDiv added to page");
-    
+
     $('#guideDiv').attr('style','width:250px;background-color:white;position:absolute;z-index:100;height:80%;overflow:scroll;display:block;float:left;padding:5px;');
     console.log("YTfiXes: guideDiv styles applied");
-    
+
     $('#guideDiv').html( $('#guide-container').html() );
     console.log("YTfiXes: guideDiv given guide-container HTML contents");
 
     $('#guideDiv').hide();
     console.log("YTfiXes: guideDiv hidden");
-    
+
     $('#page').css('margin-left','10px');
 
     $('#appbar-guide-button').click(function(){
@@ -191,8 +191,8 @@ function fixGlobal(){
         }
 
     });
-    
-    
+
+
 
     var settingsButton = "<span style='margin-right:5px;margin-top:2px;'><input type=button id=ytfixesSettingsButton value='YouTube Fixes'></span>";
     $('#yt-masthead-user').prepend(settingsButton);
@@ -441,7 +441,7 @@ function fixGlobal(){
     $('#masthead-appbar-container').remove();
 
 
-    
+
 }
 doJQuery(fixGlobal);
 
@@ -575,34 +575,38 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
             }
         });
 
-        $('#feed').prepend('<table border=0 cellpadding=5 cellspacing=0><tr id=videoTR></tr></table>');
+        //$('#feed').prepend('<table border=0 cellpadding=5 cellspacing=0><tr id=videoTR></tr></table>');
 
 
         // Watched-patch
-        var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
-        if(!watchedVideos){
-            //if not found, make it into an empty array
-            watchedVideos = ['21'];
-        }
-        else{
-            watchedVideos = watchedVideos.split(':'); //make our string-item into an array
-        }
+        try{
+            var watchedVideos = localStorage.getItem('watched_hider'); //get list of hidden videos
+            if(!watchedVideos){
+                //if not found, make it into an empty array
+                watchedVideos = ['21'];
+            }
+            else{
+                watchedVideos = watchedVideos.split(':'); //make our string-item into an array
+            }
 
-        var hidden = localStorage.getItem('video_hider'); //get list of hidden videos
-        if(!hidden){
-            //if not found, make it into an empty array
-            hidden = [];
-        }
-        else{
-            hidden = hidden.split(':'); //make our string-item into an array
-        }
+            var hidden = localStorage.getItem('video_hider'); //get list of hidden videos
+            if(!hidden){
+                //if not found, make it into an empty array
+                hidden = [];
+            }
+            else{
+                hidden = hidden.split(':'); //make our string-item into an array
+            }
 
-        var hiddenSeries = localStorage.getItem('series_hider');
-        if(!hiddenSeries){
-            hiddenSeries = ["thing i don't watch", "boring thing", "uninteresting thing"];
-        }
-        else{
-            hiddenSeries = hiddenSeries.split('||');
+            var hiddenSeries = localStorage.getItem('series_hider');
+            if(!hiddenSeries){
+                hiddenSeries = ["thing i don't watch", "boring thing", "uninteresting thing"];
+            }
+            else{
+                hiddenSeries = hiddenSeries.split('||');
+            }
+        } catch(e){
+            console.log("YTfixes: Error loading Watched-settings; " + e);
         }
 
         var hideWatchedBox = 'Hide Watched videos <input type=checkbox id=hideWatched>';
@@ -682,7 +686,13 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
             boxes.noOlderThan = '-';
             localStorage.setItem('boxes_hider', JSON.stringify(boxes));
         }
-        document.getElementById('noOlderThan').value = boxes.noOlderThan;
+        try{
+            document.getElementById('noOlderThan').value = boxes.noOlderThan;
+        } catch(e){
+            setTimeout(function(){
+                document.getElementById('noOlderThan').value = boxes.noOlderThan;
+            },1000);
+        }
 
         $('#noOlderThan').change(function(){
             boxes.noOlderThan = document.getElementById('noOlderThan').value;
@@ -856,7 +866,7 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
                 }
 
                 if(!alreadyHidden){
-                    var id = $(this).children("a.yt-uix-tile-link").attr('href').substr($(this).children("a.yt-uix-tile-link").attr('href').indexOf('=')+1); //get the ID
+                    var id = $(this).children("a.yt-uix-sessionlink").attr('href').substr($(this).children("a.yt-uix-sessionlink").attr('href').indexOf('=')+1); //get the ID
 
                     //$(this).children().children().children().children().children().attr('src','//i1.ytimg.com/vi/'+id+'/mqdefault.jpg');
 
@@ -989,7 +999,8 @@ if(location.href.match(/feed\/(subscriptions|.*)/)){
 
         hideTheRightStuff();
     }
-    doJQuery(initialStuff);
+    
+    setTimeout(function(){doJQuery(initialStuff);},1000);
 
 }
 // ----------------------------------------------------------------------------------------------------
