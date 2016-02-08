@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        YouTube Fixes
-// @namespace   Mogle
+// @author      Mogle
+// @namespace   https://github.com/MeeperMogle
 // @include     http*://*.youtube.com/*
 // @version     1.7.4.2
 // @changes     1.7.4.1: YouTube changed some small things, hotfix.
