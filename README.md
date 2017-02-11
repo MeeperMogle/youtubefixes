@@ -1,3 +1,5 @@
+# Script has been discontinued in favour of smaller scripts and the recommendation to use extensions such as Magic Actions
+
 - (NEW!) Bound Enter and Spacebar to Play/Pause the video (no scrolling on Spacebar!).
 - Customize the size of the YouTube player - save the change. 
 - Optional Watched-functionality! Also increased performance. 
